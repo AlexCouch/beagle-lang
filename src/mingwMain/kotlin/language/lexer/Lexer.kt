@@ -36,9 +36,6 @@ class Lexer(private val input: String, private val filePath: String = ""){
     private val currentChar: Char? get() = this.lineStr.getOrNull(this.position)
 
     private var position = 0
-        get(){
-
-        }
     private val lookaheadScanner: LookaheadScanner = LookaheadScanner(this, this.position)
 
     constructor(istream: StringInputStream) : this(istream.readStr())
@@ -56,7 +53,6 @@ class Lexer(private val input: String, private val filePath: String = ""){
             this.lookaheadScanner.position++
         }while(this.lookaheadScanner.lookaheadChar?.isWhitespace() == false)
         this.lookaheadScanner.position++
-        this.position = this.lookaheadScanner.position
         return Token(Tokens.IdentToken, lexeme.toString(), this.tokenLocation)
     }
 
