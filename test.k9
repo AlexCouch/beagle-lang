@@ -1,0 +1,76 @@
+def intTest = 5
+def strTest = "hello world"
+def fun testFunctionExpression() = test
+def fun testFunction(){
+    println(intTest)
+    return testFunctionExpression()
+}
+Lex Tokens:
+    DefToken
+    IdentToken
+    EqualToken
+    IntLiteralToken
+    DefToken
+    IdentToken
+    EqualToken
+    StringLiteralToken
+    DefToken
+    FunToken
+    IdentToken
+    LeftParenToken
+    RightParentToken
+    EqualToken
+    IdentToken
+    DefToken
+    FunToken
+    IdentToken
+    LeftParenToken
+    RightParentToken
+    LeftBraceToken
+    IdentToken
+    LeftParenToken
+    RightParenToken
+    IdentToken
+    LeftParenToken
+    ReturnToken
+    IdentToken
+    LeftParenToken
+    RightParenToken
+    RightBraceToken
+
+Phase 1 AST:
+    TOPLEVEL
+        DEFINITION
+            DEF_TYPE
+                PROPERTY
+            NAME("intTest")
+            VALUE
+                INTEGER_LITERAL("5")
+        DEFINITION
+            DEF_TYPE
+                PROPERTY
+            NAME("strTest")
+            VALUE
+                STRING_LITERAL("hello world")
+        DEFINITION
+            DEF_TYPE
+                FUNCTION
+            NAME("testFunctionExpression")
+            PARAMETERS
+            VALUE
+                REFERENCE("test")
+        DEFINITION
+            DEF_TYPE
+                FUNCTION
+            NAME("testFunction")
+            PARAMETERS
+            VALUE
+                BODY
+                    REFERENCE("println")
+                    FUNCTION_CALL
+                        ARGUMENTS
+                            REFERENCE("intTest")
+                    RETURN
+                        REFERENCE("testFunctionExpression")
+                        FUNCTION_CALL
+                            ARGUMENTS
