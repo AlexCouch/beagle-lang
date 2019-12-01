@@ -7,7 +7,7 @@ data class LookaheadScanner(private val lexer: Lexer, var position: Int){
         get() = this.lexer.lineStr.getOrNull(this.position)
 }
 
-class Lexer(val input: String){
+class Lexer(private val input: String, private val filePath: String = ""){
     var lineStr = ""
     var lineIdx = 0
         set(new){
@@ -15,62 +15,43 @@ class Lexer(val input: String){
             field = new
         }
     val column: Int get() = this.position + 1
-    val errors = arrayListOf<String>()
-    val currentChar: Char? get() = this.lineStr.getOrNull(this.position)
+    private val tokenLocation: TokenLocation
+        get() = TokenLocation(this.filePath, this.lineIdx, this.column)
 
-    var position = 0
-        set(new){
-            this.lookaheadScanner.position = new
-            field = new
-        }
-    var lookaheadScanner: LookaheadScanner = LookaheadScanner(this, this.position)
+    val errors = arrayListOf<String>()
+    private val currentChar: Char? get() = this.lineStr.getOrNull(this.position)
+
+    private var position = 0
+    private val lookaheadScanner: LookaheadScanner = LookaheadScanner(this, this.position)
 
     constructor(istream: StringInputStream) : this(istream.readStr())
+    constructor(istream: StringInputStream, filePath: String) : this(istream.readStr(), filePath)
 
-    fun peekIdentifier(): String{
-        val sb = StringBuilder()
+    fun nextToken(): Token{
+        val lexeme = StringBuilder()
         do{
-            sb.append(this.lookaheadScanner.lookaheadChar)
+            lexeme.append(this.lookaheadScanner.lookaheadChar)
+            val token = TokenBuilder.createToken(lexeme.toString(), this.tokenLocation)
+            if(token.tokenType != Tokens.IllegalToken){
+                return token
+            }
             this.lookaheadScanner.position++
-        }while(this.lookaheadScanner.lookaheadChar?.isLetterOrDigit() == true)
-        this.lookaheadScanner.position = this.position
-        return sb.toString()
-    }
-
-    fun readIdentifier(): String{
-        val sb = StringBuilder()
-        do{
-            sb.append(this.currentChar)
-            this.position++
-        }while(this.currentChar?.isLetterOrDigit() == true)
-        return sb.toString()
+        }while(this.lookaheadScanner.lookaheadChar?.isWhitespace() == false)
+        this.position = this.lookaheadScanner.position + 1
+        return Token(Tokens.IdentToken, lexeme.toString(), this.tokenLocation)
     }
 
     fun getTokens(): ArrayList<Token>{
         val tokens = arrayListOf<Token>()
-        var currentToken: Token?
         val lines = this.input.split('\n')
         for ((i, l) in lines.withIndex().iterator()){
-//            println("Parsing line: $i")
             this.lineStr = l
             this.lineIdx = i + 1
-            tokenize@ do{
-//                println(this.currentChar)
-                when(this.currentChar){
-                    ' ' -> {
-                        this.position++
-                    }
-                    else -> {
-                        currentToken = TokenBuilder.nextToken(this)
-                        if(currentToken == null){
-                            this.errors.add("Could not recognize token at line $i, column ${this.column}")
-                        }else{
-                            tokens.add(currentToken)
-                        }
-                        this.position++
-                    }
+            do{
+                if(this.currentChar?.isWhitespace() == false){
+                    tokens += this.nextToken()
                 }
-
+                this.position++
             }while(this.currentChar != null)
         }
         return tokens
