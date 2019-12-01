@@ -9,6 +9,7 @@ enum class Tokens(val tokenName: String){
     IdentToken("IDENTIFIER"),
     EqualSignToken("EQUAL_SIGN"),
     IntegerToken("INTEGER_LITERAL"),
+    ColonToken("COLON"),
     IllegalToken("ILLEGAL"),
     EOFToken("EOF")
 }
@@ -45,4 +46,5 @@ fun registerTokens(){
     TokenBuilder.tokenRegistry[Regex("def")] = Tokens.DefToken
     TokenBuilder.tokenRegistry[Regex("=")] = Tokens.EqualSignToken
     TokenBuilder.tokenRegistry[Regex("[0-9]+")] = Tokens.IntegerToken
+    TokenBuilder.tokenRegistry[Regex(":")] = Tokens.ColonToken
 }

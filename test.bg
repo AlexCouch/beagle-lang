@@ -1,0 +1,3 @@
+def test = 5
+def anotherTest: Int = 5
+def five = anotherTest
