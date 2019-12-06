@@ -4,47 +4,82 @@ import kotlin.native.concurrent.ThreadLocal
 
 data class TokenLocation(val fileName: String, val line: Int, val column: Int)
 
-enum class Tokens(val tokenName: String){
-    DefToken("DEFINITION"),
-    IdentToken("IDENTIFIER"),
-    EqualSignToken("EQUAL_SIGN"),
-    IntegerToken("INTEGER_LITERAL"),
-    ColonToken("COLON"),
-    IllegalToken("ILLEGAL"),
-    EOFToken("EOF")
+enum class KeywordTokenType(val symbol: String, val tokenName: String){
+    DefToken("def", "Definition")
 }
 
-data class Token(val tokenType: Tokens, val lexeme: String, val tokenLocation: TokenLocation){
-    override fun toString(): String {
-        val sb = StringBuilder()
-        sb.append(tokenType.tokenName)
-        sb.append("{\n")
-        sb.append("\tValue: $lexeme\n")
-        sb.append("\tFile: ${this.tokenLocation.fileName}\n")
-        sb.append("\tLine: ${this.tokenLocation.line}\n")
-        sb.append("\tColumn: ${this.tokenLocation.column}\n")
-        sb.append("}")
-        return sb.toString()
+enum class DelimitingTokenType(val symbol: String, val tokenName: String){
+    EqualSignToken("=", "EqualSign"),
+    ColonToken(":", "Colon")
+}
+
+enum class OtherTokenType(val tokenName: String){
+    IdentifierToken("Identifier"),
+    IntegerLiteralToken("IntegerLiteral"),
+    EndOfFileToken("EndOfFile")
+}
+
+sealed class Token(open val tokenLocation: TokenLocation){
+    data class KeywordToken(val tokenType: KeywordTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
+        override fun toString(): String {
+            val sb = StringBuilder()
+            sb.append(tokenType.tokenName)
+            sb.append("{\n")
+            sb.append("\tFile: ${this.tokenLocation.fileName}\n")
+            sb.append("\tLine: ${this.tokenLocation.line}\n")
+            sb.append("\tColumn: ${this.tokenLocation.column}\n")
+            sb.append("}")
+            return sb.toString()
+        }
     }
-}
-
-@ThreadLocal
-object TokenBuilder{
-    val tokenRegistry = hashMapOf<Regex, Tokens>()
-
-    fun createToken(currentLexeme: String, location: TokenLocation): Token{
-        for((regex, token) in this.tokenRegistry){
-            if(regex.matches(currentLexeme)){
-                return Token(token, currentLexeme, location)
+    data class DelimitingToken(val tokenType: DelimitingTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
+        override fun toString(): String {
+            val sb = StringBuilder()
+            sb.append(tokenType.tokenName)
+            sb.append("{\n")
+            sb.append("\tFile: ${this.tokenLocation.fileName}\n")
+            sb.append("\tLine: ${this.tokenLocation.line}\n")
+            sb.append("\tColumn: ${this.tokenLocation.column}\n")
+            sb.append("}")
+            return sb.toString()
+        }
+    }
+    sealed class OtherToken(open val tokenType: OtherTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
+        data class IdentifierToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IdentifierToken, tokenLocation){
+            override fun toString(): String {
+                val sb = StringBuilder()
+                sb.append(tokenType.tokenName)
+                sb.append("{\n")
+                sb.append("\tFile: ${this.tokenLocation.fileName}\n")
+                sb.append("\tLine: ${this.tokenLocation.line}\n")
+                sb.append("\tColumn: ${this.tokenLocation.column}\n")
+                sb.append("}")
+                return sb.toString()
             }
         }
-        return Token(Tokens.IllegalToken, currentLexeme, location)
+        data class IntegerLiteralToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IntegerLiteralToken, tokenLocation){
+            override fun toString(): String {
+                val sb = StringBuilder()
+                sb.append(tokenType.tokenName)
+                sb.append("{\n")
+                sb.append("\tFile: ${this.tokenLocation.fileName}\n")
+                sb.append("\tLine: ${this.tokenLocation.line}\n")
+                sb.append("\tColumn: ${this.tokenLocation.column}\n")
+                sb.append("}")
+                return sb.toString()
+            }
+        }
+        data class EndOfFileToken(override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.EndOfFileToken, tokenLocation){
+            override fun toString(): String {
+                val sb = StringBuilder()
+                sb.append(tokenType.tokenName)
+                sb.append("{\n")
+                sb.append("\tFile: ${this.tokenLocation.fileName}\n")
+                sb.append("\tLine: ${this.tokenLocation.line}\n")
+                sb.append("\tColumn: ${this.tokenLocation.column}\n")
+                sb.append("}")
+                return sb.toString()
+            }
+        }
     }
-}
-
-fun registerTokens(){
-    TokenBuilder.tokenRegistry[Regex("def")] = Tokens.DefToken
-    TokenBuilder.tokenRegistry[Regex("=")] = Tokens.EqualSignToken
-    TokenBuilder.tokenRegistry[Regex("[0-9]+")] = Tokens.IntegerToken
-    TokenBuilder.tokenRegistry[Regex(":")] = Tokens.ColonToken
 }

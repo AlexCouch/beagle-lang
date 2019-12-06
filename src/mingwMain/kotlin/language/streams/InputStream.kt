@@ -7,7 +7,7 @@ abstract class InputStream<T>{
 }
 
 abstract class StringInputStream : InputStream<Int>(){
-    fun readStr(): String{
+    open fun readStr(): String{
         var ret = ""
         do{
             val c = this.read()

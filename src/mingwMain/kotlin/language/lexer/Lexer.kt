@@ -1,19 +1,18 @@
 package language.lexer
 
+import kotlinx.io.core.ExperimentalIoApi
+import language.streams.FileInputStream
 import language.streams.StringInputStream
 
+@ExperimentalIoApi
 data class LookaheadScanner(private val lexer: Lexer, var position: Int){
     val lookaheadChar: Char?
-        get() = this.lexer.lineStr.getOrNull(this.position)
+        get() = this.lexer.input.getOrNull(this.position)
 
     override fun toString(): String {
         val sb = StringBuilder()
         sb.append("LookaheadScanner{\n")
-        sb.append("\tLexer:{\n")
-        sb.append("\t\tlineStr: ${this.lexer.lineStr}\n")
-        sb.append("\t\tlineIdx: ${this.lexer.lineIdx}\n")
-        sb.append("\t\tcolumn: ${this.lexer.column}\n")
-        sb.append("\t},\n")
+
         sb.append("\tposition: ${this.position},\n")
         sb.append("\tlookaheadChar: ${this.lookaheadChar},\n")
         sb.append("}")
@@ -21,58 +20,71 @@ data class LookaheadScanner(private val lexer: Lexer, var position: Int){
     }
 }
 
-class Lexer(private val input: String, private val filePath: String = ""){
-    var lineStr = ""
-    var lineIdx = 0
+@ExperimentalIoApi
+class Lexer(internal val input: String, internal val filePath: String = ""){
+    internal var lineIdx = 1
         set(new){
-            position = 0
+            column = 1
             field = new
         }
-    val column: Int get() = this.position + 1
-    private val tokenLocation: TokenLocation
+    internal var column: Int = 0
+    internal val tokenLocation: TokenLocation
         get() = TokenLocation(this.filePath, this.lineIdx, this.column)
 
-    val errors = arrayListOf<String>()
-    private val currentChar: Char? get() = this.lineStr.getOrNull(this.position)
+    internal val currentChar: Char? get() = this.input.getOrNull(this.position)
+    internal var position = -1
 
-    private var position = 0
-    private val lookaheadScanner: LookaheadScanner = LookaheadScanner(this, this.position)
+    internal val lookaheadScanner: LookaheadScanner = LookaheadScanner(this, this.position)
+    //Maybe not the best way to get all the tokens?
+    val tokens = arrayListOf<Token>()
+
+    internal var currentToken: Token? = null
+    internal var currentLexeme: StringBuilder = StringBuilder()
+
+    private var state: LexerState = LexerState.Idle
+
+    internal val errors = arrayListOf<String>()
 
     constructor(istream: StringInputStream) : this(istream.readStr())
-    constructor(istream: StringInputStream, filePath: String) : this(istream.readStr(), filePath)
-
-    fun nextToken(): Token{
-        val lexeme = StringBuilder()
-        do{
-            lexeme.append(this.lookaheadScanner.lookaheadChar)
-            val token = TokenBuilder.createToken(lexeme.toString(), this.tokenLocation)
-            if(token.tokenType != Tokens.IllegalToken){
-                this.lookaheadScanner.position++
-                return token
-            }
-            this.lookaheadScanner.position++
-        }while(this.lookaheadScanner.lookaheadChar?.isWhitespace() == false)
-        this.lookaheadScanner.position++
-        return Token(Tokens.IdentToken, lexeme.toString(), this.tokenLocation)
+    constructor(istream: FileInputStream) : this(istream.readStr(), istream.path){
+        println(this.input)
     }
 
     fun getTokens(): ArrayList<Token>{
-        val tokens = arrayListOf<Token>()
-        val lines = this.input.split('\n')
-        for ((i, l) in lines.withIndex().iterator()){
-            this.lineStr = l
-            this.lineIdx = i + 1
-            this.lookaheadScanner.position = position
-            do{
-                if(this.currentChar?.isWhitespace() == false){
-                    tokens += this.nextToken()
-                }else{
-                    this.lookaheadScanner.position++
-                }
-                this.position = this.lookaheadScanner.position
-            }while(this.currentChar != null)
+        do{
+            if(!this.state.transitionTo(this)){
+                this.state = LexerState.Error
+            }
+            this.state = this.state.transitionFrom(this)
+        }while(this.state != LexerState.EndOfFileDetected)
+        return this.tokens
+    }
+
+    override fun toString(): String {
+        val sb = StringBuilder()
+        sb.append("\tLexer:{\n")
+        sb.append("\t\tcurrent filePath: ${this.filePath}\n")
+        sb.append("\t\tcurrent input string: ${this.input}\n")
+        sb.append("\t\tcurrent line: ${this.lineIdx}\n")
+        sb.append("\t\tcurrent column: ${this.column}\n")
+        sb.append("\t\tcurrent token location: {\n")
+        sb.append("\t\t\tfilename: ${this.tokenLocation.fileName},\n")
+        sb.append("\t\t\tline: ${this.tokenLocation.line},\n")
+        sb.append("\t\t\tcolumn: ${this.tokenLocation.column},\n")
+        sb.append("\t\t},\t")
+        sb.append("\t\tcurrent char: ${this.currentChar},\n")
+        sb.append("\t\ttokens: {\n")
+        this.tokens.withIndex().forEach {(i, it) ->
+            sb.append(it.toString())
+            if(i < this.tokens.size - 1) sb.append(",")
+            sb.append("\n")
         }
-        tokens += Token(Tokens.EOFToken, "", this.tokenLocation)
-        return tokens
+        sb.append("\t\t},\n")
+        sb.append("\t\tcurrent token: {\n")
+        sb.append(this.currentToken?.toString())
+        sb.append("\t\t}\n")
+        sb.append("current lexeme: ${this.currentLexeme},\n")
+        sb.append("current state: ${this.state.name}")
+        return super.toString()
     }
 }
