@@ -19,7 +19,6 @@ enum class LexerState{
     LexerAdvancing{
         override fun transitionTo(lexer: Lexer): Boolean {
             lexer.position = lexer.lookaheadScanner.position
-            println(lexer.currentChar)
             return true
         }
 
@@ -67,7 +66,6 @@ enum class LexerState{
     AdvanceScanner{
         override fun transitionTo(lexer: Lexer): Boolean {
             lexer.lookaheadScanner.position++
-            println("Scanning ${lexer.lookaheadScanner.lookaheadChar?.toInt()}")
             return true
         }
 
@@ -75,7 +73,6 @@ enum class LexerState{
     },
     ConsumeChar{
         override fun transitionTo(lexer: Lexer): Boolean {
-            println("Consuming ${lexer.lookaheadScanner.lookaheadChar?.toInt()}")
             lexer.currentLexeme.append(lexer.lookaheadScanner.lookaheadChar)
             return true
         }
@@ -87,7 +84,6 @@ enum class LexerState{
      */
     EndOfLineDetected{
         override fun transitionTo(lexer: Lexer): Boolean {
-            println("End of line detected!")
             lexer.lineIdx++
             return true
         }
@@ -100,7 +96,6 @@ enum class LexerState{
     BuildingToken{
         override fun transitionTo(lexer: Lexer): Boolean {
             val lexeme = lexer.currentLexeme.toString()
-            println(lexeme)
             if(lexeme.isBlank()){
                 return true
             }
@@ -136,7 +131,6 @@ enum class LexerState{
             if(lexer.currentToken == null){
                 return false
             }
-            println("token built: ${lexer.currentToken}")
             lexer.tokens += lexer.currentToken!!
             lexer.currentLexeme.apply {
                 if(this.isNotEmpty()) this.clear()
@@ -151,7 +145,6 @@ enum class LexerState{
      */
     EndOfFileDetected{
         override fun transitionTo(lexer: Lexer): Boolean {
-            println("End of file detected!")
             lexer.currentToken = Token.OtherToken.EndOfFileToken(lexer.tokenLocation)
             return true
         }
