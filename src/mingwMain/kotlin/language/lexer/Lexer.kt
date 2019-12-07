@@ -1,10 +1,8 @@
 package language.lexer
 
-import kotlinx.io.core.ExperimentalIoApi
 import language.streams.FileInputStream
 import language.streams.StringInputStream
 
-@ExperimentalIoApi
 data class LookaheadScanner(private val lexer: Lexer, var position: Int){
     val lookaheadChar: Char?
         get() = this.lexer.input.getOrNull(this.position)
@@ -20,7 +18,6 @@ data class LookaheadScanner(private val lexer: Lexer, var position: Int){
     }
 }
 
-@ExperimentalIoApi
 class Lexer(internal val input: String, internal val filePath: String = ""){
     internal var lineIdx = 1
         set(new){

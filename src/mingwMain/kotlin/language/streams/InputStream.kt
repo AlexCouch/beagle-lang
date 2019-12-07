@@ -13,7 +13,7 @@ abstract class StringInputStream : InputStream<Int>(){
             val c = this.read()
             ret += c.toChar()
         } while(c != EOF)
-        return ret.subSequence(0..ret.length-2).toString()
+        return ret.subSequence(ret.indices).toString()
     }
     fun readCharArray(): CharArray = this.readStr().toCharArray()
     fun readByteArray(): ByteArray = this.readStr().encodeToByteArray()

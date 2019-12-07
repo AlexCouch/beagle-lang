@@ -1,8 +1,6 @@
 package language.streams
 
 import kotlinx.cinterop.*
-import kotlinx.io.core.ExperimentalIoApi
-import kotlinx.io.streams.Input
 import language.StringOutputStream
 import platform.posix.*
 
@@ -24,7 +22,6 @@ class FileOutputStream(override val path: String) : StringOutputStream(), FileSt
 
 }
 
-@ExperimentalIoApi
 class FileInputStream(override val path: String) : StringInputStream(), FileStream{
     override val targetFile: FILE = fopen(this.path, "r")?.pointed ?: throw IllegalStateException("Could not open file with path $path")
 
