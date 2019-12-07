@@ -18,7 +18,10 @@ enum class LexerState{
      */
     LexerAdvancing{
         override fun transitionTo(lexer: Lexer): Boolean {
+            val prePos = lexer.position
             lexer.position = lexer.lookaheadScanner.position
+            val delta = lexer.position - prePos
+            lexer.column += delta
             return true
         }
 

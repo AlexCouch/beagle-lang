@@ -21,7 +21,7 @@ data class LookaheadScanner(private val lexer: Lexer, var position: Int){
 class Lexer(internal val input: String, internal val filePath: String = ""){
     internal var lineIdx = 1
         set(new){
-            column = 1
+            column = 0
             field = new
         }
     internal var column: Int = 0
