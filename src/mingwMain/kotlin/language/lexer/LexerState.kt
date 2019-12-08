@@ -18,16 +18,15 @@ enum class LexerState{
      */
     LexerAdvancing{
         override fun transitionTo(lexer: Lexer): Boolean {
-            val prePos = lexer.position
+            val posDelta = lexer.lookaheadScanner.position - lexer.position
             lexer.position = lexer.lookaheadScanner.position
-            val delta = lexer.position - prePos
-            lexer.column += delta
+            lexer.column += posDelta
             return true
         }
 
         override fun transitionFrom(lexer: Lexer): LexerState = when{
+            lexer.currentChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true -> EndOfLineDetected
             lexer.currentChar?.toInt() == 65535 -> EndOfFileDetected
-            lexer.currentChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true-> EndOfLineDetected
             else -> Scanning
         }
     },
@@ -35,29 +34,29 @@ enum class LexerState{
         override fun transitionTo(lexer: Lexer): Boolean = true
 
         override fun transitionFrom(lexer: Lexer): LexerState = when{
-            lexer.currentChar == null -> when{
-                lexer.lookaheadScanner.lookaheadChar == null -> AdvanceScanner
-                lexer.lookaheadScanner.lookaheadChar?.toInt() == 65535 -> EndOfFileDetected
+            lexer.lookaheadScanner.lookaheadChar == null -> AdvanceScanner
+            lexer.lookaheadScanner.lookaheadChar?.isWhitespace() == true -> when{
+                lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true -> when{
+                    lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
+                    else -> LexerAdvancing
+                }
+                lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
+                else -> AdvanceScanner
+            }
+            lexer.lookaheadScanner.lookaheadChar?.toInt() == 65535 -> when{
+                lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
                 else -> LexerAdvancing
             }
-            lexer.currentLexeme.toString().isNotBlank() -> when{
-                lexer.lookaheadScanner.lookaheadChar?.isWhitespace() == true -> BuildingToken
-                lexer.lookaheadScanner.lookaheadChar?.toInt() == 65535 -> BuildingToken
-                DelimitingTokenType.values().find{
-                    val regex = Regex(it.symbol)
-                    lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true ||
-                    lexer.currentLexeme.toString().matches(regex)
-                } != null -> BuildingToken
+            DelimitingTokenType.values().find{
+                val regex = Regex(it.symbol)
+                lexer.currentLexeme.toString().matches(regex)
+            } != null -> BuildingToken
+            DelimitingTokenType.values().find{
+                val regex = Regex(it.symbol)
+                lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true
+            } != null -> when{
+                lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
                 else -> ConsumeChar
-            }
-            lexer.currentChar?.isWhitespace() == true -> when{
-                lexer.lookaheadScanner.lookaheadChar?.toInt() == 65535 -> EndOfFileDetected
-                DelimitingTokenType.values().find{
-                    val regex = Regex(it.symbol)
-                    lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true
-                } != null -> ConsumeChar
-                lexer.lookaheadScanner.lookaheadChar?.isWhitespace() == true -> AdvanceScanner
-                else -> LexerAdvancing
             }
             else -> ConsumeChar
         }
@@ -70,6 +69,7 @@ enum class LexerState{
     AdvanceScanner{
         override fun transitionTo(lexer: Lexer): Boolean {
             lexer.lookaheadScanner.position++
+//            println("Scanning: ${lexer.lookaheadScanner.lookaheadChar}")
             return true
         }
 
@@ -88,11 +88,12 @@ enum class LexerState{
      */
     EndOfLineDetected{
         override fun transitionTo(lexer: Lexer): Boolean {
+//            println("New line detected!")
             lexer.lineIdx++
             return true
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = Scanning
+        override fun transitionFrom(lexer: Lexer): LexerState = AdvanceScanner
     },
     /*
         Attempts to build a token from the current lexeme
@@ -100,6 +101,7 @@ enum class LexerState{
     BuildingToken{
         override fun transitionTo(lexer: Lexer): Boolean {
             val lexeme = lexer.currentLexeme.toString()
+//            println(lexeme)
             if(lexeme.isBlank()){
                 return true
             }

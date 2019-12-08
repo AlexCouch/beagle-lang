@@ -21,10 +21,10 @@ data class LookaheadScanner(private val lexer: Lexer, var position: Int){
 class Lexer(internal val input: String, internal val filePath: String = ""){
     internal var lineIdx = 1
         set(new){
-            column = 0
+            column = 1
             field = new
         }
-    internal var column: Int = 0
+    internal var column: Int = 1
     internal val tokenLocation: TokenLocation
         get() = TokenLocation(this.filePath, this.lineIdx, this.column)
 
