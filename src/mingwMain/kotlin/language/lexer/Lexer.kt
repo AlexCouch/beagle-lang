@@ -28,7 +28,7 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
         }
     internal var column: Int = 0
         set(new){
-            println(new)
+            println("Column: $new")
             field = new
         }
     internal val tokenLocation: TokenLocation

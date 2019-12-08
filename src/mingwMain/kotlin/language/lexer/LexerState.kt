@@ -11,15 +11,25 @@ enum class LexerState{
             return LexerAdvancing
         }
     },
+    LexerResetting{
+        override fun transitionTo(lexer: Lexer): Boolean {
+            lexer.column = 0
+            lexer.position = lexer.lookaheadScanner.position
+            return true
+        }
+
+        override fun transitionFrom(lexer: Lexer): LexerState = AdvanceScanner
+
+    },
     /*
         LexerAdvancing moves lexer cursor/pointer to the current lookahead cursor/pointer
      */
     LexerAdvancing{
         override fun transitionTo(lexer: Lexer): Boolean {
             val posDelta = lexer.lookaheadScanner.position - lexer.position
+            lexer.column += posDelta
             println("Column: ${lexer.column}; lookaheadPos: ${lexer.lookaheadScanner.position}; lexerpos: ${lexer.position}")
             lexer.position = lexer.lookaheadScanner.position
-            lexer.column += posDelta
             return true
         }
 
@@ -56,10 +66,7 @@ enum class LexerState{
                 println("Lookahead char: ${lexer.lookaheadScanner.lookaheadChar}; Position: ${lexer.lookaheadScanner.position}")
                 when{
                     lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
-                    lexer.currentChar?.isWhitespace() == true -> when{
-                        lexer.currentChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> ConsumeChar
-                        else -> LexerAdvancing
-                    }
+                    lexer.currentChar?.isWhitespace() == true -> LexerAdvancing
                     else -> ConsumeChar
                 }
             }
@@ -108,7 +115,7 @@ enum class LexerState{
             return true
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = AdvanceScanner
+        override fun transitionFrom(lexer: Lexer): LexerState = LexerResetting
     },
     /*
         Attempts to build a token from the current lexeme

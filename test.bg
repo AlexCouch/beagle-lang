@@ -1,4 +1,5 @@
 def fun test:Int = 5
+
 def fun five(anotherTest : Int){
 
 
