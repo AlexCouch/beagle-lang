@@ -45,7 +45,8 @@ enum class LexerState{
                 lexer.lookaheadScanner.lookaheadChar?.toInt() == 65535 -> BuildingToken
                 DelimitingTokenType.values().find{
                     val regex = Regex(it.symbol)
-                    lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true
+                    lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true ||
+                    lexer.currentLexeme.toString().matches(regex)
                 } != null -> BuildingToken
                 else -> ConsumeChar
             }
@@ -103,13 +104,15 @@ enum class LexerState{
                 return true
             }
             KeywordTokenType.values().forEach {
-                if(it.symbol == lexeme){
+                val regex = Regex(it.symbol)
+                if(lexeme.matches(regex)){
                     lexer.currentToken = Token.KeywordToken(it, lexer.tokenLocation)
                     return true
                 }
             }
             DelimitingTokenType.values().forEach {
-                if(it.symbol == lexeme){
+                val regex = Regex(it.symbol)
+                if(lexeme.matches(regex)){
                     lexer.currentToken = Token.DelimitingToken(it, lexer.tokenLocation)
                     return true
                 }

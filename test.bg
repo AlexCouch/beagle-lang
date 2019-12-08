@@ -1,3 +1,11 @@
-def test = 5
-def anotherTest: Int = 5
-def five = anotherTest
+def test:Int = 5
+def fun five(anotherTest : Int){
+
+
+
+
+
+
+
+
+}

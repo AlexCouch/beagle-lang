@@ -5,12 +5,17 @@ import kotlin.native.concurrent.ThreadLocal
 data class TokenLocation(val fileName: String, val line: Int, val column: Int)
 
 enum class KeywordTokenType(val symbol: String, val tokenName: String){
-    DefToken("def", "Definition")
+    DefToken("def", "Definition"),
+    FunctionToken("fun", "Function")
 }
 
 enum class DelimitingTokenType(val symbol: String, val tokenName: String){
     EqualSignToken("=", "EqualSign"),
-    ColonToken(":", "Colon")
+    ColonToken(":", "Colon"),
+    LeftParen("\\(", "LeftParenthesis"),
+    RightParen("\\)", "RightParenthesis"),
+    LeftBrace("\\{", "LeftBrace"),
+    RightBrace("\\}", "RightBrace")
 }
 
 enum class OtherTokenType(val tokenName: String){
