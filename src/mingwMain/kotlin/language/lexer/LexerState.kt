@@ -1,7 +1,5 @@
 package language.lexer
 
-import platform.posix.EOF
-
 enum class LexerState{
     /*
         Starting state; Does nothing
@@ -19,13 +17,13 @@ enum class LexerState{
     LexerAdvancing{
         override fun transitionTo(lexer: Lexer): Boolean {
             val posDelta = lexer.lookaheadScanner.position - lexer.position
+            println("Column: ${lexer.column}; lookaheadPos: ${lexer.lookaheadScanner.position}; lexerpos: ${lexer.position}")
             lexer.position = lexer.lookaheadScanner.position
             lexer.column += posDelta
             return true
         }
 
         override fun transitionFrom(lexer: Lexer): LexerState = when{
-            lexer.currentChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true -> EndOfLineDetected
             lexer.currentChar?.toInt() == 65535 -> EndOfFileDetected
             else -> Scanning
         }
@@ -38,7 +36,7 @@ enum class LexerState{
             lexer.lookaheadScanner.lookaheadChar?.isWhitespace() == true -> when{
                 lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true -> when{
                     lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
-                    else -> LexerAdvancing
+                    else -> EndOfLineDetected
                 }
                 lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
                 else -> AdvanceScanner
@@ -54,11 +52,28 @@ enum class LexerState{
             DelimitingTokenType.values().find{
                 val regex = Regex(it.symbol)
                 lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true
-            } != null -> when{
-                lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
+            } != null -> {
+                println("Lookahead char: ${lexer.lookaheadScanner.lookaheadChar}; Position: ${lexer.lookaheadScanner.position}")
+                when{
+                    lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
+                    lexer.currentChar?.isWhitespace() == true -> when{
+                        lexer.currentChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> ConsumeChar
+                        else -> LexerAdvancing
+                    }
+                    else -> ConsumeChar
+                }
+            }
+            else -> when{
+                lexer.currentChar?.isWhitespace() == true -> when{
+                    lexer.currentChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> when{
+                        lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> EndOfLineDetected
+                        else -> LexerAdvancing
+                    }
+                    else -> LexerAdvancing
+                }
+                lexer.currentChar == null -> LexerAdvancing
                 else -> ConsumeChar
             }
-            else -> ConsumeChar
         }
 
     },
@@ -88,7 +103,7 @@ enum class LexerState{
      */
     EndOfLineDetected{
         override fun transitionTo(lexer: Lexer): Boolean {
-//            println("New line detected!")
+            println("New line detected!")
             lexer.lineIdx++
             return true
         }
@@ -101,7 +116,7 @@ enum class LexerState{
     BuildingToken{
         override fun transitionTo(lexer: Lexer): Boolean {
             val lexeme = lexer.currentLexeme.toString()
-//            println(lexeme)
+            println("Lexeme: $lexeme; position: ${lexer.column}")
             if(lexeme.isBlank()){
                 return true
             }

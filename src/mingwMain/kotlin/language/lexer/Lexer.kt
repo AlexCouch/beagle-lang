@@ -4,8 +4,10 @@ import language.streams.FileInputStream
 import language.streams.StringInputStream
 
 data class LookaheadScanner(private val lexer: Lexer, var position: Int){
-    val lookaheadChar: Char?
-        get() = this.lexer.input.getOrNull(this.position)
+    val lookaheadChar: Char? get(){
+        println("Lookahead position: $position")
+        return this.lexer.input.getOrNull(this.position)
+    }
 
     override fun toString(): String {
         val sb = StringBuilder()
@@ -24,7 +26,11 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
             column = 1
             field = new
         }
-    internal var column: Int = 1
+    internal var column: Int = 0
+        set(new){
+            println(new)
+            field = new
+        }
     internal val tokenLocation: TokenLocation
         get() = TokenLocation(this.filePath, this.lineIdx, this.column)
 
