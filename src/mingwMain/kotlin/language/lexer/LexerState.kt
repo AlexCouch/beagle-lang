@@ -28,7 +28,7 @@ enum class LexerState{
         override fun transitionTo(lexer: Lexer): Boolean {
             val posDelta = lexer.lookaheadScanner.position - lexer.position
             lexer.column += posDelta
-            println("Column: ${lexer.column}; lookaheadPos: ${lexer.lookaheadScanner.position}; lexerpos: ${lexer.position}")
+//            println("Column: ${lexer.column}; lookaheadPos: ${lexer.lookaheadScanner.position}; lexerpos: ${lexer.position}")
             lexer.position = lexer.lookaheadScanner.position
             return true
         }
@@ -63,7 +63,7 @@ enum class LexerState{
                 val regex = Regex(it.symbol)
                 lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true
             } != null -> {
-                println("Lookahead char: ${lexer.lookaheadScanner.lookaheadChar}; Position: ${lexer.lookaheadScanner.position}")
+//                println("Lookahead char: ${lexer.lookaheadScanner.lookaheadChar}; Position: ${lexer.lookaheadScanner.position}")
                 when{
                     lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
                     lexer.currentChar?.isWhitespace() == true -> LexerAdvancing
@@ -110,7 +110,7 @@ enum class LexerState{
      */
     EndOfLineDetected{
         override fun transitionTo(lexer: Lexer): Boolean {
-            println("New line detected!")
+//            println("New line detected!")
             lexer.lineIdx++
             return true
         }
@@ -123,7 +123,7 @@ enum class LexerState{
     BuildingToken{
         override fun transitionTo(lexer: Lexer): Boolean {
             val lexeme = lexer.currentLexeme.toString()
-            println("Lexeme: $lexeme; position: ${lexer.column}")
+//            println("Lexeme: $lexeme; position: ${lexer.column}")
             if(lexeme.isBlank()){
                 return true
             }
