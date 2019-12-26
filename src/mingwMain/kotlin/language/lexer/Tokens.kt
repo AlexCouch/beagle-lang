@@ -10,10 +10,12 @@ enum class KeywordTokenType(val symbol: String, val tokenName: String){
 enum class DelimitingTokenType(val symbol: String, val tokenName: String){
     EqualSignToken("=", "EqualSign"),
     ColonToken(":", "Colon"),
-    LeftParen("\\(", "LeftParenthesis"),
-    RightParen("\\)", "RightParenthesis"),
-    LeftBrace("\\{", "LeftBrace"),
-    RightBrace("\\}", "RightBrace")
+    LeftParenToken("\\(", "LeftParenthesis"),
+    RightParenToken("\\)", "RightParenthesis"),
+    LeftBraceToken("\\{", "LeftBrace"),
+    RightBraceToken("\\}", "RightBrace"),
+    PlusSignToken("\\+", "PlusSign"),
+    MinusSignToken("\\-", "MinusSign")
 }
 
 enum class OtherTokenType(val tokenName: String){
