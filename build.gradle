@@ -29,6 +29,7 @@ kotlin {
         // in gradle.properties file and re-import your project in IDE.
         mingwMain {
             dependencies{
+                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.3'
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
                 implementation "org.jetbrains.kotlinx:kotlinx-io-native:0.1.16"
             }

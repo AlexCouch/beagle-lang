@@ -1,7 +1,5 @@
 package language.lexer
 
-import kotlin.native.concurrent.ThreadLocal
-
 data class TokenLocation(val fileName: String, val line: Int, val column: Int)
 
 enum class KeywordTokenType(val symbol: String, val tokenName: String){

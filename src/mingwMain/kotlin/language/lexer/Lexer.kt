@@ -1,5 +1,6 @@
 package language.lexer
 
+import kotlinx.coroutines.flow.*
 import language.streams.FileInputStream
 import language.streams.StringInputStream
 
@@ -38,8 +39,7 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
     internal var position = -1
 
     internal val lookaheadScanner: LookaheadScanner = LookaheadScanner(this, this.position)
-    //Maybe not the best way to get all the tokens?
-    val tokens = arrayListOf<Token>()
+    var tokenFlow = arrayListOf<Token>() //TODO Create TokenStream using kotlinx-io
 
     internal var currentToken: Token? = null
     internal var currentLexeme: StringBuilder = StringBuilder()
@@ -53,16 +53,7 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
         println(this.input)
     }
 
-    fun getTokens(): ArrayList<Token>{
-        do{
-            if(!this.state.transitionTo(this)){
-                this.state = LexerState.Error
-            }
-            this.state = this.state.transitionFrom(this)
-        }while(this.state != LexerState.EndOfFileDetected)
-        return this.tokens
-    }
-
+    //TODO: Create stringify library
     override fun toString(): String {
         val sb = StringBuilder()
         sb.append("\tLexer:{\n")
@@ -77,11 +68,6 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
         sb.append("\t\t},\t")
         sb.append("\t\tcurrent char: ${this.currentChar},\n")
         sb.append("\t\ttokens: {\n")
-        this.tokens.withIndex().forEach {(i, it) ->
-            sb.append(it.toString())
-            if(i < this.tokens.size - 1) sb.append(",")
-            sb.append("\n")
-        }
         sb.append("\t\t},\n")
         sb.append("\t\tcurrent token: {\n")
         sb.append(this.currentToken?.toString())

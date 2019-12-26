@@ -1,85 +1,91 @@
 package language.lexer
 
-enum class LexerState{
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import language.statemanager.State
+import language.statemanager.StateManagerResult
+
+enum class LexerState: State<Lexer>{
     /*
         Starting state; Does nothing
      */
     Idle{
-        override fun transitionTo(lexer: Lexer): Boolean = true
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> = StateManagerResult(true, "Idle state does nothing.")
 
-        override fun transitionFrom(lexer: Lexer): LexerState{
-            return LexerAdvancing
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>>{
+            return StateManagerResult(LexerAdvancing, "")
         }
     },
     LexerResetting{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            lexer.column = 0
-            lexer.position = lexer.lookaheadScanner.position
-            return true
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            moduleInstance.column = 0
+            moduleInstance.position = moduleInstance.lookaheadScanner.position
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = AdvanceScanner
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(AdvanceScanner, "")
 
     },
     /*
         LexerAdvancing moves lexer cursor/pointer to the current lookahead cursor/pointer
      */
     LexerAdvancing{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            val posDelta = lexer.lookaheadScanner.position - lexer.position
-            lexer.column += posDelta
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            val posDelta = moduleInstance.lookaheadScanner.position - moduleInstance.position
+            moduleInstance.column += posDelta
 //            println("Column: ${lexer.column}; lookaheadPos: ${lexer.lookaheadScanner.position}; lexerpos: ${lexer.position}")
-            lexer.position = lexer.lookaheadScanner.position
-            return true
+            moduleInstance.position = moduleInstance.lookaheadScanner.position
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = when{
-            lexer.currentChar?.toInt() == 65535 -> EndOfFileDetected
-            else -> Scanning
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = when{
+            moduleInstance.currentChar?.toInt() == 65535 -> StateManagerResult(EndOfFileDetected, "Transitioning to EOF state")
+            else -> StateManagerResult(Scanning, "Transitioning to scanning state")
         }
     },
     Scanning{
-        override fun transitionTo(lexer: Lexer): Boolean = true
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> = StateManagerResult(true, "Scanning does nothing.")
 
-        override fun transitionFrom(lexer: Lexer): LexerState = when{
-            lexer.lookaheadScanner.lookaheadChar == null -> AdvanceScanner
-            lexer.lookaheadScanner.lookaheadChar?.isWhitespace() == true -> when{
-                lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true -> when{
-                    lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
-                    else -> EndOfLineDetected
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = when{
+            moduleInstance.lookaheadScanner.lookaheadChar == null -> StateManagerResult(AdvanceScanner, "Transitioning to scanner advancing state")
+            moduleInstance.lookaheadScanner.lookaheadChar?.isWhitespace() == true -> when{
+                moduleInstance.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true -> when{
+                    moduleInstance.currentLexeme.toString().isNotBlank() -> StateManagerResult(BuildingToken, "Transitioning to token building state.")
+                    else -> StateManagerResult(EndOfLineDetected, "Transitioning to end of line state")
                 }
-                lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
-                else -> AdvanceScanner
+                moduleInstance.currentLexeme.toString().isNotBlank() -> StateManagerResult(BuildingToken, "")
+                else -> StateManagerResult(AdvanceScanner, "Transitioning to scanner advancing state")
             }
-            lexer.lookaheadScanner.lookaheadChar?.toInt() == 65535 -> when{
-                lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
-                else -> LexerAdvancing
+            moduleInstance.lookaheadScanner.lookaheadChar?.toInt() == 65535 -> when{
+                moduleInstance.currentLexeme.toString().isNotBlank() -> StateManagerResult(BuildingToken, "Transitioning to token building state.")
+                else -> StateManagerResult(LexerAdvancing, "Transitioning to lexer advancing state.")
             }
             DelimitingTokenType.values().find{
                 val regex = Regex(it.symbol)
-                lexer.currentLexeme.toString().matches(regex)
-            } != null -> BuildingToken
+                moduleInstance.currentLexeme.toString().matches(regex)
+            } != null -> StateManagerResult(BuildingToken, "Transitioning to token building state.")
             DelimitingTokenType.values().find{
                 val regex = Regex(it.symbol)
-                lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true
+                moduleInstance.lookaheadScanner.lookaheadChar?.toString()?.matches(regex) == true
             } != null -> {
 //                println("Lookahead char: ${lexer.lookaheadScanner.lookaheadChar}; Position: ${lexer.lookaheadScanner.position}")
                 when{
-                    lexer.currentLexeme.toString().isNotBlank() -> BuildingToken
-                    lexer.currentChar?.isWhitespace() == true -> LexerAdvancing
-                    else -> ConsumeChar
+                    moduleInstance.currentLexeme.toString().isNotBlank() -> StateManagerResult(BuildingToken, "Transitioning to token building state.")
+                    moduleInstance.currentChar?.isWhitespace() == true -> StateManagerResult(LexerAdvancing, "Transitioning to lexer advancing state.")
+                    else -> StateManagerResult(ConsumeChar, "Transitioning to consume char state")
                 }
             }
             else -> when{
-                lexer.currentChar?.isWhitespace() == true -> when{
-                    lexer.currentChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> when{
-                        lexer.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> EndOfLineDetected
-                        else -> LexerAdvancing
+                moduleInstance.currentChar?.isWhitespace() == true -> when{
+                    moduleInstance.currentChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> when{
+                        moduleInstance.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\r|\r\n|\n)")) == true -> StateManagerResult(EndOfLineDetected, "Transitioning to EOF state")
+                        else -> StateManagerResult(LexerAdvancing, "Transitioning to lexer advancing state.")
                     }
-                    else -> LexerAdvancing
+                    else -> StateManagerResult(LexerAdvancing, "Transitioning to lexer advancing state.")
                 }
-                lexer.currentChar == null -> LexerAdvancing
-                else -> ConsumeChar
+                moduleInstance.currentChar == null -> StateManagerResult(LexerAdvancing, "Transitioning to lexer advancing state.")
+                else -> StateManagerResult(ConsumeChar, "Transitioning to consume char state")
             }
         }
 
@@ -89,111 +95,109 @@ enum class LexerState{
         and then appends the current lookahead char to the current lexeme builder
      */
     AdvanceScanner{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            lexer.lookaheadScanner.position++
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            moduleInstance.lookaheadScanner.position++
 //            println("Scanning: ${lexer.lookaheadScanner.lookaheadChar}")
-            return true
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = Scanning
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(Scanning, "Transitioning to scanning state")
     },
     ConsumeChar{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            lexer.currentLexeme.append(lexer.lookaheadScanner.lookaheadChar)
-            return true
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            moduleInstance.currentLexeme.append(moduleInstance.lookaheadScanner.lookaheadChar)
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = AdvanceScanner
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(AdvanceScanner, "Transitioning to scanner advancing state.")
     },
     /*
         End of line detected, so increment the lexer's line counter and continue scanning
      */
     EndOfLineDetected{
-        override fun transitionTo(lexer: Lexer): Boolean {
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
 //            println("New line detected!")
-            lexer.lineIdx++
-            return true
+            moduleInstance.lineIdx++
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = LexerResetting
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(LexerResetting, "Transitioning to resetting lexer state.")
     },
     /*
         Attempts to build a token from the current lexeme
      */
     BuildingToken{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            val lexeme = lexer.currentLexeme.toString()
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            val lexeme = moduleInstance.currentLexeme.toString()
 //            println("Lexeme: $lexeme; position: ${lexer.column}")
             if(lexeme.isBlank()){
-                return true
+                return StateManagerResult(true, "")
             }
             KeywordTokenType.values().forEach {
                 val regex = Regex(it.symbol)
                 if(lexeme.matches(regex)){
-                    lexer.currentToken = Token.KeywordToken(it, lexer.tokenLocation)
-                    return true
+                    moduleInstance.currentToken = Token.KeywordToken(it, moduleInstance.tokenLocation)
+                    return StateManagerResult(true, "")
                 }
             }
             DelimitingTokenType.values().forEach {
                 val regex = Regex(it.symbol)
                 if(lexeme.matches(regex)){
-                    lexer.currentToken = Token.DelimitingToken(it, lexer.tokenLocation)
-                    return true
+                    moduleInstance.currentToken = Token.DelimitingToken(it, moduleInstance.tokenLocation)
+                    return StateManagerResult(true, "")
                 }
             }
             if(lexeme.matches(Regex("[a-zA-Z][a-zA-Z0-9]+"))) {
-                lexer.currentToken = Token.OtherToken.IdentifierToken(lexeme, lexer.tokenLocation)
-                return true
+                moduleInstance.currentToken = Token.OtherToken.IdentifierToken(lexeme, moduleInstance.tokenLocation)
+                return StateManagerResult(true, "")
             }else if(lexeme.matches(Regex("[0-9]+"))){
-                lexer.currentToken = Token.OtherToken.IntegerLiteralToken(lexeme, lexer.tokenLocation)
-                return true
+                moduleInstance.currentToken = Token.OtherToken.IntegerLiteralToken(lexeme, moduleInstance.tokenLocation)
+                return StateManagerResult(true, "")
             }
-            return false
+            return StateManagerResult(true, "Could not build a token!")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = BuiltToken
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(BuiltToken, "Transitioning to built token state.")
     },
     /*
         Stores the current token in the lexer's list of tokens and clears the lexeme builder
      */
     BuiltToken{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            if(lexer.currentToken == null){
-                return false
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            println("Built a token...adding it to token stream!")
+            if(moduleInstance.currentToken == null){
+                return StateManagerResult(false, "No token has been built")
             }
-            lexer.tokens += lexer.currentToken!!
-            lexer.currentLexeme.apply {
+            moduleInstance.tokenFlow.add(moduleInstance.currentToken!!)
+            moduleInstance.currentLexeme.apply {
                 if(this.isNotEmpty()) this.clear()
             }
-            return true
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = LexerAdvancing
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(LexerAdvancing, "Transitioning to advancing lexer state.")
     },
     /*
         Found the end of the file, so add the EOF token and return to the start state (making this state effectively final)
      */
     EndOfFileDetected{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            lexer.currentToken = Token.OtherToken.EndOfFileToken(lexer.tokenLocation)
-            return true
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            moduleInstance.currentToken = Token.OtherToken.EndOfFileToken(moduleInstance.tokenLocation)
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = Idle
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(Idle, "Transitioning to idle state.")
     },
     /*
         Reserved for error handling
      */
     Error{
-        override fun transitionTo(lexer: Lexer): Boolean {
-            lexer.errors += "Lexer encountered an error while scanning:"
-            lexer.errors += lexer.toString()
-            return true
+        override fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
+            moduleInstance.errors += "Lexer encountered an error while scanning:"
+            moduleInstance.errors += moduleInstance.toString()
+            return StateManagerResult(true, "")
         }
 
-        override fun transitionFrom(lexer: Lexer): LexerState = Error
+        override fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(Error, "Staying in error state.")
     };
-
-    abstract fun transitionTo(lexer: Lexer): Boolean
-    abstract fun transitionFrom(lexer: Lexer): LexerState
 }
