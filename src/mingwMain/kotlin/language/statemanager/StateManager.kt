@@ -5,8 +5,8 @@ import kotlinx.coroutines.flow.*
 data class StateStackEntry(val stateName: String, val resultStr: String)
 data class StateManagerResult<out T>(val data: T, val message: String)
 interface State<in T>{
-    fun transitionTo(moduleInstance: T): StateManagerResult<Boolean>
-    fun transitionFrom(moduleInstance: T): StateManagerResult<State<T>>
+    suspend fun transitionTo(moduleInstance: T): StateManagerResult<Boolean>
+    suspend fun transitionFrom(moduleInstance: T): StateManagerResult<State<T>>
 }
 
 abstract class StateManager<T>{
@@ -36,6 +36,7 @@ abstract class StateManager<T>{
             }
         }
         stateStackFlow.buffer().collect{
+//            println(it.resultStr)
             this.stateStack.add(it)
         }
     }

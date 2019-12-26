@@ -1,12 +1,13 @@
 package language.lexer
 
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import language.streams.FileInputStream
 import language.streams.StringInputStream
 
 data class LookaheadScanner(private val lexer: Lexer, var position: Int){
     val lookaheadChar: Char? get(){
-        println("Lookahead position: $position")
+//        println("Lookahead position: $position")
         return this.lexer.input.getOrNull(this.position)
     }
 
@@ -29,7 +30,7 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
         }
     internal var column: Int = 0
         set(new){
-            println("Column: $new")
+//            println("Column: $new")
             field = new
         }
     internal val tokenLocation: TokenLocation
@@ -39,7 +40,7 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
     internal var position = -1
 
     internal val lookaheadScanner: LookaheadScanner = LookaheadScanner(this, this.position)
-    var tokenFlow = arrayListOf<Token>() //TODO Create TokenStream using kotlinx-io
+    val tokenStream = Channel<Token>()
 
     internal var currentToken: Token? = null
     internal var currentLexeme: StringBuilder = StringBuilder()

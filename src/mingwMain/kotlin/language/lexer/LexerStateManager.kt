@@ -11,6 +11,4 @@ class LexerStateManager private constructor(override val module: Lexer): StateMa
     override val finalStates: List<State<Lexer>> = arrayListOf(LexerState.EndOfFileDetected, LexerState.Error)
 
     constructor(fileInputStream: FileInputStream) : this(Lexer(fileInputStream))
-
-    fun collectTokens() = this.module.tokenFlow
 }
