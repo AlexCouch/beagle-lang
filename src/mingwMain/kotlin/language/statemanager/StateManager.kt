@@ -26,6 +26,8 @@ abstract class StateManager<T>{
                 if (!propogateResult.data) {
                     messageBuilder.append("\tFailed to transition to ${currentState::class.qualifiedName}\n")
                     messageBuilder.append("\t\tDetails:\n")
+                    messageBuilder.append(propogateResult.message)
+                    break
                 }
                 messageBuilder.append(propogateResult.message)
                 val predicateResult = this@StateManager.currentState.transitionFrom(this@StateManager.module)

@@ -2,6 +2,7 @@ package language.lexer
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import language.error.ErrorManager
 import language.streams.FileInputStream
 import language.streams.StringInputStream
 
@@ -47,11 +48,15 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
 
     private var state: LexerState = LexerState.Idle
 
-    internal val errors = arrayListOf<String>()
+    internal val errorManager = LexerErrorManager(this)
 
     constructor(istream: StringInputStream) : this(istream.readStr())
     constructor(istream: FileInputStream) : this(istream.readStr(), istream.path){
         println(this.input)
+    }
+
+    init{
+        errorManager.start()
     }
 
     //TODO: Create stringify library

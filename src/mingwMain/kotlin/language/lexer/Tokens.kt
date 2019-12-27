@@ -15,12 +15,34 @@ enum class DelimitingTokenType(val symbol: String, val tokenName: String){
     LeftBraceToken("\\{", "LeftBrace"),
     RightBraceToken("\\}", "RightBrace"),
     PlusSignToken("\\+", "PlusSign"),
-    MinusSignToken("\\-", "MinusSign")
+    MinusSignToken("\\-", "MinusSign"),
+    StarSign("\\*", "StarSign"),
+    ForwardSlashSign("\\/", "ForwardSlash"),
+    BackslashSign("\\\\", "Backslash"),
+    DoubleQuoteSign("\\\"", "DoubleQuote"),
+    ApostropheSign("\\'", "Apostrophe"),
+    BangSign("\\!", "Bang"),
+    UnderscoreSign("\\_", "Underscore"),
+    DotSign("\\.", "Dot"),
+    CommaSign("\\,", "Comma"),
+    SemicolonSign("\\;", "Semicolon"),
+    AmpersandSign("\\&", "Ampersand"),
+    DollarSign("\\$", "DollarSign"),
+    PercentSign("\\%", "PercentSign"),
+    HashSign("\\#", "HashSign"),
+    AtSign("\\@", "AtSign"),
+    PipeSign("\\|", "Pipe"),
+    QuestionSign("\\?", "Question"),
+    RightAngleBracketSign("\\>", "RightAngleBracket"),
+    LeftAngleBracketSign("\\<", "LeftAngleBracket"),
+    CaretSign("\\^", "Caret"),
+    LeftSquareBracketSign("\\[", "LeftSquareBracket"),
+    RightSquareBracketSign("\\]", "RightSquareBracket"),
 }
 
 enum class OtherTokenType(val tokenName: String){
     IdentifierToken("Identifier"),
-    IntegerLiteralToken("IntegerLiteral"),
+    IntegerToken("Integer"),
     EndOfFileToken("EndOfFile")
 }
 
@@ -63,7 +85,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
                 return sb.toString()
             }
         }
-        data class IntegerLiteralToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IntegerLiteralToken, tokenLocation){
+        data class IntegerLiteralToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IntegerToken, tokenLocation){
             override fun toString(): String {
                 val sb = StringBuilder()
                 sb.append(tokenType.tokenName)

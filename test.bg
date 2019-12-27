@@ -1,4 +1,4 @@
-def val test: Int = 5
+def val test: Int = 5 * 10
 
 def fun five(anotherTest: Int){
     let someLocalVariable = "Hello there!"

@@ -154,7 +154,8 @@ enum class LexerState: State<Lexer>{
                 moduleInstance.tokenStream.send(Token.OtherToken.IntegerLiteralToken(lexeme, moduleInstance.tokenLocation))
                 return StateManagerResult(true, "")
             }
-            return StateManagerResult(true, "Could not build a token!")
+            moduleInstance.errorManager.createError("Lexer Token Builder", "Could not build a token from ${moduleInstance.currentLexeme}")
+            return StateManagerResult(false, "Could not build a token from ${moduleInstance.currentLexeme}")
         }
 
         override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(BuiltToken, "Transitioning to built token state.")
@@ -189,8 +190,7 @@ enum class LexerState: State<Lexer>{
      */
     Error{
         override suspend fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
-            moduleInstance.errors += "Lexer encountered an error while scanning:"
-            moduleInstance.errors += moduleInstance.toString()
+
             return StateManagerResult(true, "")
         }
 
