@@ -147,10 +147,10 @@ enum class LexerState: State<Lexer>{
                     return StateManagerResult(true, "")
                 }
             }
-            if(lexeme.matches(Regex("[a-zA-Z][a-zA-Z0-9]+"))) {
+            if(lexeme.first().isLetter() && lexeme.all { it.isLetterOrDigit() }) {
                 moduleInstance.tokenStream.send(Token.OtherToken.IdentifierToken(lexeme, moduleInstance.tokenLocation))
                 return StateManagerResult(true, "")
-            }else if(lexeme.matches(Regex("[0-9]+"))){
+            }else if(lexeme.all{ it.isDigit() }){
                 moduleInstance.tokenStream.send(Token.OtherToken.IntegerLiteralToken(lexeme, moduleInstance.tokenLocation))
                 return StateManagerResult(true, "")
             }

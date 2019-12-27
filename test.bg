@@ -1,7 +1,18 @@
 def val test: Int = 5 * 10
 
+def abstract class SomeClass<T>{
+    def fun someMemberFunction(t: T)
+}
+
+def class SomeClassForString: SomeClass<String>(){
+    def impl fun someMemberFunction(t: String){
+        println(t)
+    }
+}
+
 def fun five(anotherTest: Int){
     let someLocalVariable = "Hello there!"
+    let someClassObj = SomeClassForString()
     println(someLocalVariable)
-    println(test + anotherTest - 10)
+    someClassObj.someMemberFunction("Calling a class member function!")
 }
