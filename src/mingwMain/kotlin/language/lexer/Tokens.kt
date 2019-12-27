@@ -4,7 +4,7 @@ data class TokenLocation(val fileName: String, val line: Int, val column: Int)
 
 enum class KeywordTokenType(val symbol: String, val tokenName: String){
     DefToken("def", "Definition"),
-    FunctionToken("fun", "Function")
+    LetToken("let", "Let"),
 }
 
 enum class DelimitingTokenType(val symbol: String, val tokenName: String){

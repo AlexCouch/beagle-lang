@@ -1,5 +1,7 @@
-def fun test:Int = 5
+def val test: Int = 5
 
-def fun five(anotherTest : Int){
+def fun five(anotherTest: Int){
+    let someLocalVariable = "Hello there!"
+    println(someLocalVariable)
     println(test + anotherTest - 10)
 }
