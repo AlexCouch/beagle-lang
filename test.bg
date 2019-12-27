@@ -1,7 +1,7 @@
 def val test: Int = 5 * 10
 
 def abstract class SomeClass<T>{
-    def fun someMemberFunction(t: T)
+    def abstract fun someMemberFunction(t: T)
 }
 
 def class SomeClassForString: SomeClass<String>(){
