@@ -77,7 +77,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
             return buildPrettyString {
                 this.appendWithNewLine("${this@DelimitingToken.tokenType.tokenName}{")
                 indent {
-                    this.appendWithNewLine("${this@DelimitingToken.tokenLocation}")
+                    this.append("${this@DelimitingToken.tokenLocation}")
                 }
                 this.appendWithNewLine("}")
             }

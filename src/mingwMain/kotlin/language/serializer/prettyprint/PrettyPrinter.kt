@@ -5,23 +5,18 @@ class PrettyPrinter{
     private val sb = StringBuilder()
 
     fun append(string: String){
-        println(this.indentationLevel)
         if(indentationLevel > 0){
             if(string.contains("\n")) {
-                val lines = string.split("\n")
-                lines.withIndex().forEach { (index, it) ->
-                    (1..this.indentationLevel).forEach { _ ->
-                        this.sb.append("\t")
+                val lines = string.split(Regex("(?<=\n)"))
+                for(line in lines.withIndex()){
+                    if(line.value.isNotBlank()) {
+                        (1..this.indentationLevel).forEach {
+                            this.sb.append("\t")
+                        }
                     }
-                    sb.append(it)
-                    if (index < lines.size - 1) {
-                        sb.append("\n")
-                    }
+                    this.sb.append(line.value)
                 }
             }else{
-                (1..this.indentationLevel).forEach{_ ->
-                    this.sb.append("\t")
-                }
                 sb.append(string)
             }
         }else{
