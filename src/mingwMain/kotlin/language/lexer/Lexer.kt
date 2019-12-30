@@ -3,6 +3,7 @@ package language.lexer
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import language.error.ErrorManager
+import language.serializer.prettyprint.*
 import language.streams.FileInputStream
 import language.streams.StringInputStream
 
@@ -13,13 +14,13 @@ data class LookaheadScanner(private val lexer: Lexer, var position: Int){
     }
 
     override fun toString(): String {
-        val sb = StringBuilder()
-        sb.append("LookaheadScanner{\n")
-
-        sb.append("\tposition: ${this.position},\n")
-        sb.append("\tlookaheadChar: ${this.lookaheadChar},\n")
-        sb.append("}")
-        return sb.toString()
+        return buildPrettyString {
+            this.appendWithNewLine("lookahead scanner:")
+            this.indent {
+                this.appendWithNewLine("lookahead position: ${this@LookaheadScanner.position}")
+                this.appendWithNewLine("lookahead char: ${this@LookaheadScanner.lookaheadChar}")
+            }
+        }
     }
 }
 
@@ -54,5 +55,25 @@ class Lexer(internal val input: String, internal val filePath: String = ""){
 
     init{
         errorManager.start()
+    }
+
+    override fun toString(): String {
+        return buildPrettyString {
+            this.appendWithNewLine("Lexer:")
+            this.indent {
+                this.appendWithNewLine("line index: ${this@Lexer.lineIdx}")
+                this.appendWithNewLine("column: ${this@Lexer.column}")
+                this.appendWithNewLine("token location:")
+                this.indent {
+                    this.appendWithNewLine(this@Lexer.tokenLocation.toString())
+                }
+                this.appendWithNewLine("current char: ${this@Lexer.currentChar}")
+                this.appendWithNewLine("current lexeme: ${this@Lexer.currentLexeme}")
+                this.appendWithNewLine("current position: ${this@Lexer.position}")
+                this.indent{
+                    this.appendWithNewLine(this@Lexer.lookaheadScanner.toString())
+                }
+            }
+        }
     }
 }

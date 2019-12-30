@@ -2,11 +2,9 @@ package language.error
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import language.serializer.prettyprint.PrettyPrinter
+import language.serializer.prettyprint.buildPrettyString
 
 data class ErrorEntry(val moduleName: String, val message: String)
 abstract class ErrorManager<T>{
@@ -19,10 +17,13 @@ abstract class ErrorManager<T>{
             while(!errorStream.isClosedForSend){
                 val errorEntry = errorStream.receive()
                 val (moduleName, message) = errorEntry
-                val errorStringBuilder = StringBuilder()
-                errorStringBuilder.append("An error occurred in $moduleName:\n")
-                errorStringBuilder.append("\t$message")
-                println(errorStringBuilder.toString())
+                val errorMessage = buildPrettyString {
+                    this.appendWithNewLine("An error occurred in $moduleName:")
+                    this.indent {
+                        this.appendWithNewLine(message)
+                    }
+                }
+                println(errorMessage)
             }
         }
 

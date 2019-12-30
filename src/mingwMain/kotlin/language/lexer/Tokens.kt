@@ -1,6 +1,20 @@
 package language.lexer
 
-data class TokenLocation(val fileName: String, val line: Int, val column: Int)
+import language.serializer.prettyprint.PrettyPrinter
+import language.serializer.prettyprint.buildPrettyString
+
+data class TokenLocation(val fileName: String, val line: Int, val column: Int){
+    override fun toString(): String {
+        return buildPrettyString {
+            this.appendWithNewLine("token location:")
+            this.indent {
+                this.appendWithNewLine("file name: ${this@TokenLocation.fileName}")
+                this.appendWithNewLine("line: ${this@TokenLocation.line}")
+                this.appendWithNewLine("column: ${this@TokenLocation.column}")
+            }
+        }
+    }
+}
 
 enum class KeywordTokenType(val symbol: String, val tokenName: String){
     DefToken("def", "Definition"),
@@ -49,66 +63,62 @@ enum class OtherTokenType(val tokenName: String){
 sealed class Token(open val tokenLocation: TokenLocation){
     data class KeywordToken(val tokenType: KeywordTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
         override fun toString(): String {
-            val sb = StringBuilder()
-            sb.append(tokenType.tokenName)
-            sb.append("{\n")
-            sb.append("\tFile: ${this.tokenLocation.fileName}\n")
-            sb.append("\tLine: ${this.tokenLocation.line}\n")
-            sb.append("\tColumn: ${this.tokenLocation.column}\n")
-            sb.append("}")
-            return sb.toString()
+            return buildPrettyString {
+                this.appendWithNewLine("${this@KeywordToken.tokenType.tokenName}{")
+                indent {
+                    this.appendWithNewLine("${this@KeywordToken.tokenLocation}")
+                }
+                this.appendWithNewLine("}")
+            }
         }
     }
     data class DelimitingToken(val tokenType: DelimitingTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
         override fun toString(): String {
-            val sb = StringBuilder()
-            sb.append(tokenType.tokenName)
-            sb.append("{\n")
-            sb.append("\tFile: ${this.tokenLocation.fileName}\n")
-            sb.append("\tLine: ${this.tokenLocation.line}\n")
-            sb.append("\tColumn: ${this.tokenLocation.column}\n")
-            sb.append("}")
-            return sb.toString()
+            return buildPrettyString {
+                this.appendWithNewLine("${this@DelimitingToken.tokenType.tokenName}{")
+                indent {
+                    this.appendWithNewLine("${this@DelimitingToken.tokenLocation}")
+                }
+                this.appendWithNewLine("}")
+            }
         }
     }
     sealed class OtherToken(open val tokenType: OtherTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
         data class IdentifierToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IdentifierToken, tokenLocation){
             override fun toString(): String {
-                val sb = StringBuilder()
-                sb.append(tokenType.tokenName)
-                sb.append("{\n")
-                sb.append("\tSymbol: ${this.symbol}\n")
-                sb.append("\tFile: ${this.tokenLocation.fileName}\n")
-                sb.append("\tLine: ${this.tokenLocation.line}\n")
-                sb.append("\tColumn: ${this.tokenLocation.column}\n")
-                sb.append("}")
-                return sb.toString()
+                return buildPrettyString {
+                    this.appendWithNewLine("${this@IdentifierToken.tokenType.tokenName}{")
+                    this.indent {
+                        this.appendWithNewLine("symbol: ${this@IdentifierToken.symbol}")
+                        this.appendWithNewLine("${this@IdentifierToken.tokenLocation}")
+                    }
+                    this.appendWithNewLine("}")
+                }
             }
         }
         data class IntegerLiteralToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IntegerToken, tokenLocation){
             override fun toString(): String {
-                val sb = StringBuilder()
-                sb.append(tokenType.tokenName)
-                sb.append("{\n")
-                sb.append("\tSymbol: ${this.symbol}\n")
-                sb.append("\tFile: ${this.tokenLocation.fileName}\n")
-                sb.append("\tLine: ${this.tokenLocation.line}\n")
-                sb.append("\tColumn: ${this.tokenLocation.column}\n")
-                sb.append("}")
-                return sb.toString()
+                return buildPrettyString {
+                    this.appendWithNewLine("${this@IntegerLiteralToken.tokenType.tokenName}{")
+                    this.indent {
+                        this.appendWithNewLine("symbol: ${this@IntegerLiteralToken.symbol}")
+                        this.appendWithNewLine("${this@IntegerLiteralToken.tokenLocation}")
+                    }
+                    this.appendWithNewLine("}")
+                }
             }
         }
         data class EndOfFileToken(override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.EndOfFileToken, tokenLocation){
             override fun toString(): String {
-                val sb = StringBuilder()
-                sb.append(tokenType.tokenName)
-                sb.append("{\n")
-                sb.append("\tFile: ${this.tokenLocation.fileName}\n")
-                sb.append("\tLine: ${this.tokenLocation.line}\n")
-                sb.append("\tColumn: ${this.tokenLocation.column}\n")
-                sb.append("}")
-                return sb.toString()
+                return buildPrettyString {
+                    this.appendWithNewLine("${this@EndOfFileToken.tokenType.tokenName}{")
+                    this.indent {
+                        this.appendWithNewLine("${this@EndOfFileToken.tokenLocation}")
+                    }
+                    this.appendWithNewLine("}")
+                }
             }
         }
+
     }
 }
