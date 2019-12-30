@@ -1,9 +1,24 @@
 package language.lexer
 
-import language.serializer.prettyprint.PrettyPrinter
+import kotlinx.io.core.ByteReadPacket
+import kotlinx.io.core.buildPacket
+import language.serializer.bytestream.Serializable
 import language.serializer.prettyprint.buildPrettyString
 
-data class TokenLocation(val fileName: String, val line: Int, val column: Int){
+data class TokenLocation(val fileName: String, val line: Int, val column: Int): Serializable{
+    override fun toBytes(): ByteReadPacket = buildPacket{
+        this.writeByte(0xb.toByte())
+        //Token location file name
+        this.writeByte(0xb1.toByte())
+        this.writeStringUtf8(this@TokenLocation.fileName)
+        //Token location line number
+        this.writeByte(0xb2.toByte())
+        this.writeInt(this@TokenLocation.line)
+        //Token location column
+        this.writeByte(0xb3.toByte())
+        this.writeInt(this@TokenLocation.column)
+    }
+
     override fun toString(): String {
         return buildPrettyString {
             this.appendWithNewLine("token location:")
@@ -60,8 +75,21 @@ enum class OtherTokenType(val tokenName: String){
     EndOfFileToken("EndOfFile")
 }
 
-sealed class Token(open val tokenLocation: TokenLocation){
+sealed class Token(open val tokenLocation: TokenLocation): Serializable{
     data class KeywordToken(val tokenType: KeywordTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
+        override fun toBytes(): ByteReadPacket = buildPacket {
+            //Token Start
+            this.writeByte(0xfe.toByte())
+            //Token meta start
+            this.writeByte(0xa.toByte())
+            //Token name
+            this.writeByte(0xa1.toByte())
+            this.writeStringUtf8(this@KeywordToken.tokenType.tokenName)
+            //Token location start
+            this.writePacket(this@KeywordToken.tokenLocation.toBytes())
+            //Token end
+            this.writeByte(0xff.toByte())
+        }
         override fun toString(): String {
             return buildPrettyString {
                 this.appendWithNewLine("${this@KeywordToken.tokenType.tokenName}{")
@@ -73,6 +101,19 @@ sealed class Token(open val tokenLocation: TokenLocation){
         }
     }
     data class DelimitingToken(val tokenType: DelimitingTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
+        override fun toBytes(): ByteReadPacket = buildPacket {
+            //Token Start
+            this.writeByte(0xfe.toByte())
+            //Token meta start
+            this.writeByte(0xa.toByte())
+            //Token name
+            this.writeByte(0xa1.toByte())
+            this.writeStringUtf8(this@DelimitingToken.tokenType.tokenName)
+            //Token location
+            this.writePacket(this@DelimitingToken.tokenLocation.toBytes())
+            //Token end
+            this.writeByte(0xff.toByte())
+        }
         override fun toString(): String {
             return buildPrettyString {
                 this.appendWithNewLine("${this@DelimitingToken.tokenType.tokenName}{")
@@ -85,6 +126,22 @@ sealed class Token(open val tokenLocation: TokenLocation){
     }
     sealed class OtherToken(open val tokenType: OtherTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
         data class IdentifierToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IdentifierToken, tokenLocation){
+            override fun toBytes(): ByteReadPacket = buildPacket {
+                //Token Start
+                this.writeByte(0xfe.toByte())
+                //Token meta start
+                this.writeByte(0xa.toByte())
+                //Token name
+                this.writeByte(0xa1.toByte())
+                this.writeStringUtf8(this@IdentifierToken.tokenType.tokenName)
+                //Token symbol
+                this.writeByte(0xa1.toByte())
+                this.writeStringUtf8(this@IdentifierToken.symbol)
+                //Token location
+                this.writePacket(this@IdentifierToken.tokenLocation.toBytes())
+                //Token end
+                this.writeByte(0xff.toByte())
+            }
             override fun toString(): String {
                 return buildPrettyString {
                     this.appendWithNewLine("${this@IdentifierToken.tokenType.tokenName}{")
@@ -97,6 +154,38 @@ sealed class Token(open val tokenLocation: TokenLocation){
             }
         }
         data class IntegerLiteralToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IntegerToken, tokenLocation){
+            /*override fun toBytes(): ByteReadPacket = buildBytePacket {
+                //Token Start
+                this.appendByte(0xfe.toByte())
+                //Token meta start
+                this.appendByte(0xa.toByte())
+                //Token name
+                this.appendByte(0xa1.toByte())
+                this.appendString(this@IntegerLiteralToken.tokenType.tokenName)
+                //Token symbol
+                this.appendByte(0xa1.toByte())
+                this.appendString(this@IntegerLiteralToken.symbol)
+                //Token location
+                this.append(this@IntegerLiteralToken.tokenLocation.toBytes())
+                //Token end
+                this.appendChar(0xff.toChar())
+            }*/
+            override fun toBytes(): ByteReadPacket = buildPacket {
+                //Token Start
+                this.writeInt(0xfe)
+                //Token meta start
+                this.writeInt(0xa)
+                //Token name
+                this.writeInt(0x1a)
+                this.writeStringUtf8(this@IntegerLiteralToken.tokenType.tokenName)
+                //Token symbol
+                this.writeInt(0xa1)
+                this.writeStringUtf8(this@IntegerLiteralToken.symbol)
+                //Token location
+                this.writePacket(this@IntegerLiteralToken.tokenLocation.toBytes())
+                //Token end
+                this.writeInt(0xff)
+            }
             override fun toString(): String {
                 return buildPrettyString {
                     this.appendWithNewLine("${this@IntegerLiteralToken.tokenType.tokenName}{")
@@ -109,6 +198,19 @@ sealed class Token(open val tokenLocation: TokenLocation){
             }
         }
         data class EndOfFileToken(override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.EndOfFileToken, tokenLocation){
+            override fun toBytes(): ByteReadPacket = buildPacket {
+                //Token Start
+                this.writeByte(0xfe.toByte())
+                //Token meta start
+                this.writeByte(0xa.toByte())
+                //Token name
+                this.writeByte(0xa1.toByte())
+                this.writeStringUtf8(this@EndOfFileToken.tokenType.tokenName)
+                //Token location
+                this.writePacket(this@EndOfFileToken.tokenLocation.toBytes())
+                //Token end
+                this.writeByte(0xff.toByte())
+            }
             override fun toString(): String {
                 return buildPrettyString {
                     this.appendWithNewLine("${this@EndOfFileToken.tokenType.tokenName}{")
