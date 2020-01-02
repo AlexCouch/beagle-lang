@@ -1,11 +1,13 @@
 package language.lexer
 
+import kotlinx.io.core.BytePacketBuilder
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
+import kotlinx.io.core.readBytes
 import language.serializer.bytestream.Serializable
 import language.serializer.prettyprint.buildPrettyString
 
-data class TokenLocation(val fileName: String, val line: Int, val column: Int): Serializable{
+data class TokenLocation(val fileName: String, val line: Int, val column: Int): Serializable<TokenLocation>{
     override fun toBytes(): ByteReadPacket = buildPacket{
         this.writeByte(0xb.toByte())
         //Token location file name
