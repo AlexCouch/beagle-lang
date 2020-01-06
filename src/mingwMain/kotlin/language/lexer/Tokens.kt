@@ -1,26 +1,8 @@
 package language.lexer
 
-import kotlinx.io.core.BytePacketBuilder
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readBytes
-import language.serializer.bytestream.Serializable
 import language.serializer.prettyprint.buildPrettyString
 
-data class TokenLocation(val fileName: String, val line: Int, val column: Int): Serializable<TokenLocation>{
-    override fun toBytes(): ByteReadPacket = buildPacket{
-        this.writeByte(0xb.toByte())
-        //Token location file name
-        this.writeByte(0xb1.toByte())
-        this.writeStringUtf8(this@TokenLocation.fileName)
-        //Token location line number
-        this.writeByte(0xb2.toByte())
-        this.writeInt(this@TokenLocation.line)
-        //Token location column
-        this.writeByte(0xb3.toByte())
-        this.writeInt(this@TokenLocation.column)
-    }
-
+data class TokenLocation(val fileName: String, val line: Int, val column: Int){
     override fun toString(): String {
         return buildPrettyString {
             this.appendWithNewLine("token location:")
@@ -33,65 +15,52 @@ data class TokenLocation(val fileName: String, val line: Int, val column: Int): 
     }
 }
 
-enum class KeywordTokenType(val symbol: String, val tokenName: String){
-    DefToken("def", "Definition"),
-    LetToken("let", "Let"),
+enum class KeywordTokenType(val symbol: String, val tokenName: String, val highByte: Byte, val byteId: Byte){
+    DefToken("def", "Definition", 0xa1.toByte(), 0x10.toByte()),
+    LetToken("let", "Let", 0xa1.toByte(), 0x20.toByte()),
 }
 
-enum class DelimitingTokenType(val symbol: String, val tokenName: String){
-    EqualSignToken("=", "EqualSign"),
-    ColonToken(":", "Colon"),
-    LeftParenToken("\\(", "LeftParenthesis"),
-    RightParenToken("\\)", "RightParenthesis"),
-    LeftBraceToken("\\{", "LeftBrace"),
-    RightBraceToken("\\}", "RightBrace"),
-    PlusSignToken("\\+", "PlusSign"),
-    MinusSignToken("\\-", "MinusSign"),
-    StarSign("\\*", "StarSign"),
-    ForwardSlashSign("\\/", "ForwardSlash"),
-    BackslashSign("\\\\", "Backslash"),
-    DoubleQuoteSign("\\\"", "DoubleQuote"),
-    ApostropheSign("\\'", "Apostrophe"),
-    BangSign("\\!", "Bang"),
-    UnderscoreSign("\\_", "Underscore"),
-    DotSign("\\.", "Dot"),
-    CommaSign("\\,", "Comma"),
-    SemicolonSign("\\;", "Semicolon"),
-    AmpersandSign("\\&", "Ampersand"),
-    DollarSign("\\$", "DollarSign"),
-    PercentSign("\\%", "PercentSign"),
-    HashSign("\\#", "HashSign"),
-    AtSign("\\@", "AtSign"),
-    PipeSign("\\|", "Pipe"),
-    QuestionSign("\\?", "Question"),
-    RightAngleBracketSign("\\>", "RightAngleBracket"),
-    LeftAngleBracketSign("\\<", "LeftAngleBracket"),
-    CaretSign("\\^", "Caret"),
-    LeftSquareBracketSign("\\[", "LeftSquareBracket"),
-    RightSquareBracketSign("\\]", "RightSquareBracket"),
+enum class DelimitingTokenType(val symbol: String, val tokenName: String, val highByte: Byte, val byteId: Byte){
+    EqualSignToken("=", "EqualSign", 0xa2.toByte(), 0xa1.toByte()),
+    ColonToken(":", "Colon", 0xa2.toByte(), 0xa2.toByte()),
+    LeftParenToken("\\(", "LeftParenthesis", 0xa2.toByte(), 0xa3.toByte()),
+    RightParenToken("\\)", "RightParenthesis", 0xa2.toByte(), 0xa4.toByte()),
+    LeftBraceToken("\\{", "LeftBrace", 0xa2.toByte(), 0xa5.toByte()),
+    RightBraceToken("\\}", "RightBrace", 0xa2.toByte(), 0xa6.toByte()),
+    PlusSignToken("\\+", "PlusSign", 0xa2.toByte(), 0xa7.toByte()),
+    MinusSignToken("\\-", "MinusSign", 0xa2.toByte(), 0xa8.toByte()),
+    StarSign("\\*", "StarSign", 0xa2.toByte(), 0xa9.toByte()),
+    ForwardSlashSign("\\/", "ForwardSlash", 0xa2.toByte(), 0xaa.toByte()),
+    BackslashSign("\\\\", "Backslash", 0xa2.toByte(), 0xab.toByte()),
+    DoubleQuoteSign("\\\"", "DoubleQuote", 0xa2.toByte(), 0xac.toByte()),
+    ApostropheSign("\\'", "Apostrophe", 0xa2.toByte(), 0xad.toByte()),
+    BangSign("\\!", "Bang", 0xa2.toByte(), 0xae.toByte()),
+    UnderscoreSign("\\_", "Underscore", 0xa2.toByte(), 0xaf.toByte()),
+    DotSign("\\.", "Dot", 0xa2.toByte(), 0xb0.toByte()),
+    CommaSign("\\,", "Comma", 0xa2.toByte(), 0xb1.toByte()),
+    SemicolonSign("\\;", "Semicolon", 0xa2.toByte(), 0xb2.toByte()),
+    AmpersandSign("\\&", "Ampersand", 0xa2.toByte(), 0xb3.toByte()),
+    DollarSign("\\$", "DollarSign", 0xa2.toByte(), 0xb4.toByte()),
+    PercentSign("\\%", "PercentSign", 0xa2.toByte(), 0xb5.toByte()),
+    HashSign("\\#", "HashSign", 0xa2.toByte(), 0xb6.toByte()),
+    AtSign("\\@", "AtSign", 0xa2.toByte(), 0xb7.toByte()),
+    PipeSign("\\|", "Pipe", 0xa2.toByte(), 0xb8.toByte()),
+    QuestionSign("\\?", "Question", 0xa2.toByte(), 0xb9.toByte()),
+    RightAngleBracketSign("\\>", "RightAngleBracket", 0xa2.toByte(), 0xb9.toByte()),
+    LeftAngleBracketSign("\\<", "LeftAngleBracket", 0xa2.toByte(), 0xba.toByte()),
+    CaretSign("\\^", "Caret", 0xa2.toByte(), 0xbb.toByte()),
+    LeftSquareBracketSign("\\[", "LeftSquareBracket", 0xa2.toByte(), 0xbc.toByte()),
+    RightSquareBracketSign("\\]", "RightSquareBracket", 0xa2.toByte(), 0xbd.toByte()),
 }
 
-enum class OtherTokenType(val tokenName: String){
-    IdentifierToken("Identifier"),
-    IntegerToken("Integer"),
-    EndOfFileToken("EndOfFile")
+enum class OtherTokenType(val tokenName: String, val highByte: Byte, val byteId: Byte){
+    IdentifierToken("Identifier", 0xa3.toByte(), 0x3a.toByte()),
+    IntegerToken("Integer", 0xa3.toByte(), 0x3b.toByte()),
+    EndOfFileToken("EndOfFile", 0xa3.toByte(), 0x3c.toByte())
 }
 
-sealed class Token(open val tokenLocation: TokenLocation): Serializable{
+sealed class Token(open val tokenLocation: TokenLocation){
     data class KeywordToken(val tokenType: KeywordTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
-        override fun toBytes(): ByteReadPacket = buildPacket {
-            //Token Start
-            this.writeByte(0xfe.toByte())
-            //Token meta start
-            this.writeByte(0xa.toByte())
-            //Token name
-            this.writeByte(0xa1.toByte())
-            this.writeStringUtf8(this@KeywordToken.tokenType.tokenName)
-            //Token location start
-            this.writePacket(this@KeywordToken.tokenLocation.toBytes())
-            //Token end
-            this.writeByte(0xff.toByte())
-        }
         override fun toString(): String {
             return buildPrettyString {
                 this.appendWithNewLine("${this@KeywordToken.tokenType.tokenName}{")
@@ -103,19 +72,6 @@ sealed class Token(open val tokenLocation: TokenLocation): Serializable{
         }
     }
     data class DelimitingToken(val tokenType: DelimitingTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
-        override fun toBytes(): ByteReadPacket = buildPacket {
-            //Token Start
-            this.writeByte(0xfe.toByte())
-            //Token meta start
-            this.writeByte(0xa.toByte())
-            //Token name
-            this.writeByte(0xa1.toByte())
-            this.writeStringUtf8(this@DelimitingToken.tokenType.tokenName)
-            //Token location
-            this.writePacket(this@DelimitingToken.tokenLocation.toBytes())
-            //Token end
-            this.writeByte(0xff.toByte())
-        }
         override fun toString(): String {
             return buildPrettyString {
                 this.appendWithNewLine("${this@DelimitingToken.tokenType.tokenName}{")
@@ -128,22 +84,6 @@ sealed class Token(open val tokenLocation: TokenLocation): Serializable{
     }
     sealed class OtherToken(open val tokenType: OtherTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
         data class IdentifierToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IdentifierToken, tokenLocation){
-            override fun toBytes(): ByteReadPacket = buildPacket {
-                //Token Start
-                this.writeByte(0xfe.toByte())
-                //Token meta start
-                this.writeByte(0xa.toByte())
-                //Token name
-                this.writeByte(0xa1.toByte())
-                this.writeStringUtf8(this@IdentifierToken.tokenType.tokenName)
-                //Token symbol
-                this.writeByte(0xa1.toByte())
-                this.writeStringUtf8(this@IdentifierToken.symbol)
-                //Token location
-                this.writePacket(this@IdentifierToken.tokenLocation.toBytes())
-                //Token end
-                this.writeByte(0xff.toByte())
-            }
             override fun toString(): String {
                 return buildPrettyString {
                     this.appendWithNewLine("${this@IdentifierToken.tokenType.tokenName}{")
@@ -156,38 +96,6 @@ sealed class Token(open val tokenLocation: TokenLocation): Serializable{
             }
         }
         data class IntegerLiteralToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IntegerToken, tokenLocation){
-            /*override fun toBytes(): ByteReadPacket = buildBytePacket {
-                //Token Start
-                this.appendByte(0xfe.toByte())
-                //Token meta start
-                this.appendByte(0xa.toByte())
-                //Token name
-                this.appendByte(0xa1.toByte())
-                this.appendString(this@IntegerLiteralToken.tokenType.tokenName)
-                //Token symbol
-                this.appendByte(0xa1.toByte())
-                this.appendString(this@IntegerLiteralToken.symbol)
-                //Token location
-                this.append(this@IntegerLiteralToken.tokenLocation.toBytes())
-                //Token end
-                this.appendChar(0xff.toChar())
-            }*/
-            override fun toBytes(): ByteReadPacket = buildPacket {
-                //Token Start
-                this.writeInt(0xfe)
-                //Token meta start
-                this.writeInt(0xa)
-                //Token name
-                this.writeInt(0x1a)
-                this.writeStringUtf8(this@IntegerLiteralToken.tokenType.tokenName)
-                //Token symbol
-                this.writeInt(0xa1)
-                this.writeStringUtf8(this@IntegerLiteralToken.symbol)
-                //Token location
-                this.writePacket(this@IntegerLiteralToken.tokenLocation.toBytes())
-                //Token end
-                this.writeInt(0xff)
-            }
             override fun toString(): String {
                 return buildPrettyString {
                     this.appendWithNewLine("${this@IntegerLiteralToken.tokenType.tokenName}{")
@@ -200,19 +108,6 @@ sealed class Token(open val tokenLocation: TokenLocation): Serializable{
             }
         }
         data class EndOfFileToken(override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.EndOfFileToken, tokenLocation){
-            override fun toBytes(): ByteReadPacket = buildPacket {
-                //Token Start
-                this.writeByte(0xfe.toByte())
-                //Token meta start
-                this.writeByte(0xa.toByte())
-                //Token name
-                this.writeByte(0xa1.toByte())
-                this.writeStringUtf8(this@EndOfFileToken.tokenType.tokenName)
-                //Token location
-                this.writePacket(this@EndOfFileToken.tokenLocation.toBytes())
-                //Token end
-                this.writeByte(0xff.toByte())
-            }
             override fun toString(): String {
                 return buildPrettyString {
                     this.appendWithNewLine("${this@EndOfFileToken.tokenType.tokenName}{")
