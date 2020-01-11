@@ -65,7 +65,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
             return buildPrettyString {
                 this.appendWithNewLine("${this@KeywordToken.tokenType.tokenName}{")
                 indent {
-                    this.appendWithNewLine("${this@KeywordToken.tokenLocation}")
+                    this.append("${this@KeywordToken.tokenLocation}")
                 }
                 this.appendWithNewLine("}")
             }
@@ -89,7 +89,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
                     this.appendWithNewLine("${this@IdentifierToken.tokenType.tokenName}{")
                     this.indent {
                         this.appendWithNewLine("symbol: ${this@IdentifierToken.symbol}")
-                        this.appendWithNewLine("${this@IdentifierToken.tokenLocation}")
+                        this.append("${this@IdentifierToken.tokenLocation}")
                     }
                     this.appendWithNewLine("}")
                 }
@@ -101,7 +101,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
                     this.appendWithNewLine("${this@IntegerLiteralToken.tokenType.tokenName}{")
                     this.indent {
                         this.appendWithNewLine("symbol: ${this@IntegerLiteralToken.symbol}")
-                        this.appendWithNewLine("${this@IntegerLiteralToken.tokenLocation}")
+                        this.append("${this@IntegerLiteralToken.tokenLocation}")
                     }
                     this.appendWithNewLine("}")
                 }
@@ -112,7 +112,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
                 return buildPrettyString {
                     this.appendWithNewLine("${this@EndOfFileToken.tokenType.tokenName}{")
                     this.indent {
-                        this.appendWithNewLine("${this@EndOfFileToken.tokenLocation}")
+                        this.append("${this@EndOfFileToken.tokenLocation}")
                     }
                     this.appendWithNewLine("}")
                 }
