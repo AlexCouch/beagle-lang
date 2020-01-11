@@ -28,11 +28,10 @@ class TokenLocationBytecodeConverter : BytecodeConverter<TokenLocation>(){
         bytes.readUntilDelimiter(0xc2.toByte(), filePathBytes)
         val filePath = filePathBytes.build().readUTF8Line() ?: return null
         val filePathEnd = bytes.readByte()
-        val lineNoStart = if(filePathEnd != 0xc2.toByte()){
-            bytes.readByte()
-        }else{
-            filePathEnd
+        if(filePathEnd != 0xc2.toByte()){
+            return null
         }
+        val lineNoStart = bytes.readByte()
         if(lineNoStart != 0xc3.toByte()){
             return null
         }
@@ -90,38 +89,55 @@ class TokenBytecodeConverter : BytecodeConverter<Token>() {
 
     override fun deserializeFromBytes(bytes: ByteReadPacket): Token? {
         val tokenLocationBytecodeConverter = TokenLocationBytecodeConverter()
-        val tokenIdHighByte = bytes.readByte()
-        val tokenIdLowByte = bytes.readByte()
-        val tokenDataStart = bytes.readByte()
-        if(tokenDataStart != 0xb1.toByte()){
-            return null
+        val tokenIdHighByte = bytes.readUByte()
+        val tokenIdLowByte = bytes.readUByte()
+        var nextByte: UByte
+        val dataPacket = BytePacketBuilder()
+        val tokenLocationPacket = BytePacketBuilder()
+        while(bytes.canRead()) {
+            nextByte = bytes.tryPeek().toUByte()
+//            println("Reading next byte: ${nextByte.toString(16)}")
+            when {
+                nextByte == 0xb1.toUByte() -> {
+                    bytes.readUntilDelimiter(0xb2.toByte(), dataPacket)
+                    val tokenDataEnd = bytes.readUByte()
+                    if (tokenDataEnd != 0xb2.toUByte()) {
+                        return null
+                    }
+                }
+                nextByte == 0xce.toUByte() -> {
+                    bytes.readUntilDelimiter(0xcf.toByte(), tokenLocationPacket)
+                    tokenLocationPacket.writeByte(bytes.readByte())
+                }
+            }
+
         }
-        val tokenData = buildPacket {
-            bytes.readUntilDelimiter(0xb2.toByte(), this)
-        }.readUTF8Line() ?: return null
-        val tokenDataEnd = bytes.readByte()
-        if(tokenDataEnd != 0xb2.toByte()){
-            return null
+
+        val tokenLocations = tokenLocationBytecodeConverter.deserialize(tokenLocationPacket.build())
+        println("Token locations: $tokenLocations")
+        if(tokenLocations.size > 1){
+            println("Read multiple token locations. Taking the first one!")
         }
-        val tokenLocation = tokenLocationBytecodeConverter.deserialize(bytes) ?: return null
+        val tokenLocation = tokenLocations[0] ?: return null
         KeywordTokenType.values().forEach {
-            if(it.byteId == tokenIdLowByte){
+//            println("Matching token id bytes ${ubyteArrayOf(tokenIdHighByte, tokenIdLowByte).toHexString()} against: ${ubyteArrayOf(it.highByte.toUByte(), it.byteId.toUByte()).toHexString()}")
+            if(it.byteId.toUByte() == tokenIdLowByte){
                 return Token.KeywordToken(it, tokenLocation)
             }
         }
         DelimitingTokenType.values().forEach {
-            if(it.byteId == tokenIdLowByte){
+            if(it.byteId.toUByte() == tokenIdLowByte){
                 return Token.DelimitingToken(it, tokenLocation)
             }
         }
         return when(tokenIdLowByte){
-            OtherTokenType.IntegerToken.byteId -> {
-                Token.OtherToken.IntegerLiteralToken(tokenData, tokenLocation)
+            OtherTokenType.IntegerToken.byteId.toUByte() -> {
+                Token.OtherToken.IntegerLiteralToken(dataPacket.build().readUTF8Line() ?: return null, tokenLocation)
             }
-            OtherTokenType.IdentifierToken.byteId -> {
-                Token.OtherToken.IdentifierToken(tokenData, tokenLocation)
+            OtherTokenType.IdentifierToken.byteId.toUByte() -> {
+                Token.OtherToken.IdentifierToken(dataPacket.build().readUTF8Line() ?: return null, tokenLocation)
             }
-            OtherTokenType.EndOfFileToken.byteId -> {
+            OtherTokenType.EndOfFileToken.byteId.toUByte() -> {
                 Token.OtherToken.EndOfFileToken(tokenLocation)
             }
             else -> null
@@ -129,3 +145,8 @@ class TokenBytecodeConverter : BytecodeConverter<Token>() {
     }
 
 }
+
+fun ByteArray.toHexString() = this.joinToString { b -> b.toString(16).padStart(2, '0') }
+fun Array<Byte>.toHexString() = this.joinToString { b -> b.toString(16).padStart(2, '0') }
+fun UByteArray.toHexString() = this.joinToString { b -> b.toString(16).padStart(2, '0') }
+fun Array<UByte>.toHexString() = this.joinToString { b -> b.toString(16).padStart(2, '0') }

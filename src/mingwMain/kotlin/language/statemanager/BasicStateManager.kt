@@ -4,16 +4,21 @@ import kotlinx.coroutines.flow.*
 
 data class StateStackEntry(val stateName: String, val resultStr: String)
 data class StateManagerResult<out T>(val data: T, val message: String)
-interface State<in T>{
-    suspend fun transitionTo(moduleInstance: T): StateManagerResult<Boolean>
-    suspend fun transitionFrom(moduleInstance: T): StateManagerResult<State<T>>
+interface BasicState<in T>: BiResultState<T, Boolean, BasicState<T>>
+interface BiResultState<in T, out R, out V>{
+    suspend fun transitionTo(moduleInstance: T): StateManagerResult<R>
+    suspend fun transitionFrom(moduleInstance: T): StateManagerResult<V>
 }
 
-abstract class StateManager<T>{
-    internal val stateStack = arrayListOf<StateStackEntry>()
-    internal abstract var currentState: State<T>
+interface StateManager<T>{
+    val stateStack: ArrayList<StateStackEntry>
+    var currentState: T
+    val finalStates: List<T>
+}
+
+abstract class BasicStateManager<T>: StateManager<BasicState<T>>{
+    override val stateStack: ArrayList<StateStackEntry> = arrayListOf()
     internal abstract val module: T
-    internal abstract val finalStates: List<State<T>>
 
     suspend fun start(){
         val stateStackFlow = flow{
@@ -30,10 +35,10 @@ abstract class StateManager<T>{
                     break
                 }
                 messageBuilder.append(propogateResult.message)
-                val predicateResult = this@StateManager.currentState.transitionFrom(this@StateManager.module)
+                val predicateResult = this@BasicStateManager.currentState.transitionFrom(this@BasicStateManager.module)
                 messageBuilder.append("Predication result:\n")
                 messageBuilder.append("\t${predicateResult.message}\n")
-                this@StateManager.currentState = predicateResult.data
+                this@BasicStateManager.currentState = predicateResult.data
                 emit(StateStackEntry(currentState::class.qualifiedName ?: "Unknown", messageBuilder.toString()))
             }
         }

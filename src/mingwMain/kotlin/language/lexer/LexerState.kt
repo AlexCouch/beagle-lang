@@ -3,17 +3,17 @@ package language.lexer
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import language.statemanager.State
+import language.statemanager.BasicState
 import language.statemanager.StateManagerResult
 
-enum class LexerState: State<Lexer>{
+enum class LexerState: BasicState<Lexer> {
     /*
         Starting state; Does nothing
      */
     Idle{
         override suspend fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> = StateManagerResult(true, "Idle state does nothing.")
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>>{
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState>{
             return StateManagerResult(LexerAdvancing, "")
         }
     },
@@ -24,7 +24,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(AdvanceScanner, "")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(AdvanceScanner, "")
 
     },
     /*
@@ -39,7 +39,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = when{
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = when{
             moduleInstance.currentChar?.toInt() == 65535 -> StateManagerResult(EndOfFileDetected, "Transitioning to EOF state")
             else -> StateManagerResult(Scanning, "Transitioning to scanning state")
         }
@@ -47,7 +47,7 @@ enum class LexerState: State<Lexer>{
     Scanning{
         override suspend fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> = StateManagerResult(true, "Scanning does nothing.")
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = when{
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = when{
             moduleInstance.lookaheadScanner.lookaheadChar == null -> StateManagerResult(AdvanceScanner, "Transitioning to scanner advancing state")
             moduleInstance.lookaheadScanner.lookaheadChar?.isWhitespace() == true -> when{
                 moduleInstance.lookaheadScanner.lookaheadChar?.toString()?.matches(Regex("(\n|\r\n|\r)")) == true -> when{
@@ -101,7 +101,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(Scanning, "Transitioning to scanning state")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(Scanning, "Transitioning to scanning state")
     },
     ConsumeChar{
         override suspend fun transitionTo(moduleInstance: Lexer): StateManagerResult<Boolean> {
@@ -109,7 +109,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(AdvanceScanner, "Transitioning to scanner advancing state.")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(AdvanceScanner, "Transitioning to scanner advancing state.")
     },
     /*
         End of line detected, so increment the lexer's line counter and continue scanning
@@ -121,7 +121,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(LexerResetting, "Transitioning to resetting lexer state.")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(LexerResetting, "Transitioning to resetting lexer state.")
     },
     /*
         Attempts to build a token from the current lexeme
@@ -158,7 +158,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(false, "Could not build a token from ${moduleInstance.currentLexeme}")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(BuiltToken, "Transitioning to built token state.")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(BuiltToken, "Transitioning to built token state.")
     },
     /*
         Stores the current token in the lexer's list of tokens and clears the lexeme builder
@@ -172,7 +172,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(LexerAdvancing, "Transitioning to advancing lexer state.")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(LexerAdvancing, "Transitioning to advancing lexer state.")
     },
     /*
         Found the end of the file, so add the EOF token and return to the start state (making this state effectively final)
@@ -183,7 +183,7 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(Idle, "Transitioning to idle state.")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(Idle, "Transitioning to idle state.")
     },
     /*
         Reserved for error handling
@@ -194,6 +194,6 @@ enum class LexerState: State<Lexer>{
             return StateManagerResult(true, "")
         }
 
-        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<State<Lexer>> = StateManagerResult(Error, "Staying in error state.")
+        override suspend fun transitionFrom(moduleInstance: Lexer): StateManagerResult<LexerState> = StateManagerResult(Error, "Staying in error state.")
     };
 }

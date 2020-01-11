@@ -1,21 +1,17 @@
 package language
 
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.io.core.BytePacketBuilder
+import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import language.lexer.LexerStateManager
-import language.lexer.Token
-import language.serializer.bytestream.*
+import language.lexer.TokenBytecodeConverter
+import language.lexer.toHexString
 import language.streams.FileInputStream
-import language.streams.ScannerInputStream
-import language.streams.StringInputStream
-import language.streams.StringLiteralInputStream
-import kotlin.experimental.and
 
 fun main() = runBlocking<Unit>{
     val file = FileInputStream("test.bg")
@@ -25,18 +21,21 @@ fun main() = runBlocking<Unit>{
         lexerStateManager.start()
         lexerStateManager.module.tokenStream.close()
     }
-    launch{
+    flow<ByteReadPacket>{
         val bytecode = buildPacket {
             runBlocking {
                 lexerStateManager.module.tokenStream.consumeEach {
-                    this@buildPacket.writePacket(it.toBytes())
+                    val tokenBytecodeConverter = TokenBytecodeConverter()
+                    this@buildPacket.writePacket(tokenBytecodeConverter.serialize(it))
                 }
             }
         }
-        val str = bytecode.readBytes().joinToString {
-            (0xff and it.toInt()).toString(16).padStart(2, '0')
-        }
-        println(str)
+        emit(bytecode)
+    }.collect{
+        println(it.copy().readBytes().toUByteArray().toHexString())
+        val tokenBytecodeConverter = TokenBytecodeConverter()
+        val tokens = tokenBytecodeConverter.deserialize(it)
+        tokens.forEach(::println)
     }
     /*val bytecode = buildBytePacket{
         launch{
