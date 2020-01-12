@@ -1,5 +1,7 @@
 package language.lexer
 
+import kotlinx.serialization.Serializable
+import language.lexer.bytecode.TokenBytecodeSerializer
 import language.serializer.prettyprint.buildPrettyString
 
 data class TokenLocation(val fileName: String, val line: Int, val column: Int){
@@ -15,12 +17,17 @@ data class TokenLocation(val fileName: String, val line: Int, val column: Int){
     }
 }
 
-enum class KeywordTokenType(val symbol: String, val tokenName: String, val highByte: Byte, val byteId: Byte){
-    DefToken("def", "Definition", 0xa1.toByte(), 0x10.toByte()),
+interface TokenType{
+    val highByte: Byte
+    val byteId: Byte
+}
+
+enum class KeywordTokenType(val symbol: String, val tokenName: String, override val highByte: Byte, override val byteId: Byte): TokenType{
+    DefToken("def", "Definition", 0xa110.toByte(), 0x10.toByte()),
     LetToken("let", "Let", 0xa1.toByte(), 0x20.toByte()),
 }
 
-enum class DelimitingTokenType(val symbol: String, val tokenName: String, val highByte: Byte, val byteId: Byte){
+enum class DelimitingTokenType(val symbol: String, val tokenName: String, override val highByte: Byte, override val byteId: Byte): TokenType{
     EqualSignToken("=", "EqualSign", 0xa2.toByte(), 0xa1.toByte()),
     ColonToken(":", "Colon", 0xa2.toByte(), 0xa2.toByte()),
     LeftParenToken("\\(", "LeftParenthesis", 0xa2.toByte(), 0xa3.toByte()),
@@ -53,13 +60,16 @@ enum class DelimitingTokenType(val symbol: String, val tokenName: String, val hi
     RightSquareBracketSign("\\]", "RightSquareBracket", 0xa2.toByte(), 0xbd.toByte()),
 }
 
-enum class OtherTokenType(val tokenName: String, val highByte: Byte, val byteId: Byte){
+enum class OtherTokenType(val tokenName: String, override val highByte: Byte, override val byteId: Byte): TokenType{
     IdentifierToken("Identifier", 0xa3.toByte(), 0x3a.toByte()),
     IntegerToken("Integer", 0xa3.toByte(), 0x3b.toByte()),
     EndOfFileToken("EndOfFile", 0xa3.toByte(), 0x3c.toByte())
 }
 
+@Serializable(with=TokenBytecodeSerializer::class)
 sealed class Token(open val tokenLocation: TokenLocation){
+
+    @Serializable(with=TokenBytecodeSerializer::class)
     data class KeywordToken(val tokenType: KeywordTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
         override fun toString(): String {
             return buildPrettyString {
@@ -71,6 +81,8 @@ sealed class Token(open val tokenLocation: TokenLocation){
             }
         }
     }
+
+    @Serializable(with=TokenBytecodeSerializer::class)
     data class DelimitingToken(val tokenType: DelimitingTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
         override fun toString(): String {
             return buildPrettyString {
@@ -82,7 +94,9 @@ sealed class Token(open val tokenLocation: TokenLocation){
             }
         }
     }
+
     sealed class OtherToken(open val tokenType: OtherTokenType, override val tokenLocation: TokenLocation): Token(tokenLocation){
+        @Serializable(with=TokenBytecodeSerializer::class)
         data class IdentifierToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IdentifierToken, tokenLocation){
             override fun toString(): String {
                 return buildPrettyString {
@@ -95,6 +109,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
                 }
             }
         }
+        @Serializable(with=TokenBytecodeSerializer::class)
         data class IntegerLiteralToken(val symbol: String, override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.IntegerToken, tokenLocation){
             override fun toString(): String {
                 return buildPrettyString {
@@ -107,6 +122,7 @@ sealed class Token(open val tokenLocation: TokenLocation){
                 }
             }
         }
+        @Serializable(with=TokenBytecodeSerializer::class)
         data class EndOfFileToken(override val tokenLocation: TokenLocation): OtherToken(OtherTokenType.EndOfFileToken, tokenLocation){
             override fun toString(): String {
                 return buildPrettyString {
